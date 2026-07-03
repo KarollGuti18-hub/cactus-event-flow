@@ -1,26 +1,159 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --cactus-green: #7f9b28;
+  --cactus-green-light: #9ab83a;
+  --cactus-green-dim: rgba(127, 155, 40, 0.15);
+  --cactus-white: #ffffff;
+  --cactus-gray: #6c6e6a;
+  --cactus-dark: #2e2c36;
+  --cactus-bg: #000000;
+  --cactus-bg-elevated: #121214;
+  --cactus-bg-card: #18181c;
+  --cactus-border: rgba(255, 255, 255, 0.08);
+  --cactus-border-green: rgba(127, 155, 40, 0.3);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-cactus-green: var(--cactus-green);
+  --color-cactus-green-light: var(--cactus-green-light);
+  --color-cactus-gray: var(--cactus-gray);
+  --color-cactus-dark: var(--cactus-dark);
+  --color-cactus-bg: var(--cactus-bg);
+  --color-cactus-bg-elevated: var(--cactus-bg-elevated);
+  --color-cactus-bg-card: var(--cactus-bg-card);
+  --font-sans: var(--font-plus-jakarta);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  --header-height: 5.5rem;
+}
+
+.section-anchor {
+  scroll-margin-top: var(--header-height);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--cactus-bg);
+  color: var(--cactus-white);
+  font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(127, 155, 40, 0.35);
+  color: #fff;
+}
+
+/* Grid pattern utility */
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(127, 155, 40, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127, 155, 40, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 80px rgba(127, 155, 40, 0.12);
+}
+
+.text-gradient-green {
+  background: linear-gradient(135deg, #9ab83a 0%, #7f9b28 50%, #6a8220 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form inputs */
+.cactus-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--cactus-border);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.875rem 1rem;
+  font-size: 0.9375rem;
+  color: var(--cactus-white);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.cactus-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.cactus-input:focus {
+  outline: none;
+  border-color: var(--cactus-border-green);
+  box-shadow: 0 0 0 3px rgba(127, 155, 40, 0.12);
+}
+
+.cactus-input.error {
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+.cactus-btn-submit {
+  width: 100%;
+  border-radius: 9999px;
+  background: #7f9b28;
+  padding: 1.125rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(127, 155, 40, 0.4),
+    0 8px 32px rgba(127, 155, 40, 0.35);
+}
+
+.cactus-btn-submit:hover {
+  background: #9ab83a;
+  box-shadow:
+    0 0 0 1px rgba(154, 184, 58, 0.5),
+    0 12px 40px rgba(127, 155, 40, 0.45);
+  transform: translateY(-1px);
+}
+
+.cactus-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  cursor: pointer;
+}
+
+.cactus-checkbox {
+  margin-top: 0.125rem;
+  height: 1.125rem;
+  width: 1.125rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1.5px solid rgba(127, 155, 40, 0.5);
+  background: rgba(127, 155, 40, 0.08);
+  accent-color: #7f9b28;
+  cursor: pointer;
+}
+
+.cactus-checkbox:checked {
+  background-color: #7f9b28;
+  border-color: #7f9b28;
+}
+
+.cactus-checkbox:focus-visible {
+  outline: 2px solid rgba(127, 155, 40, 0.5);
+  outline-offset: 2px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cactus-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(127, 155, 40, 0.3);
+  border-radius: 3px;
 }
