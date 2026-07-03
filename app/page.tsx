@@ -367,6 +367,7 @@ export default function Home() {
   const [activeTrack, setActiveTrack] = useState(TRACKS[0].id);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<FormData>({
     nombre: "",
@@ -405,6 +406,8 @@ export default function Home() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    setHasUserInteracted(true);
+
     const errors = validateForm();
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -430,6 +433,7 @@ export default function Home() {
   }
 
   function updateField(field: keyof FormData, value: string | boolean) {
+    setHasUserInteracted(true);
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (formErrors[field]) {
       setFormErrors((prev) => {
@@ -477,16 +481,8 @@ export default function Home() {
 
   useEffect(() => {
     if (formStatus === "success") return;
+    if (!hasUserInteracted) return;
     if (!isValidEmail(formData.email)) return;
-
-    const hasStartedFilling =
-      formData.nombre.trim() !== "" ||
-      formData.apellido.trim() !== "" ||
-      formData.empresa.trim() !== "" ||
-      formData.cargo.trim() !== "" ||
-      formData.interes !== "";
-
-    if (!hasStartedFilling) return;
 
     const timer = window.setTimeout(() => {
       fetch("/api/track-incomplete", {
@@ -504,7 +500,7 @@ export default function Home() {
     }, 1000);
 
     return () => window.clearTimeout(timer);
-  }, [formData, formStatus]);
+  }, [formData, formStatus, hasUserInteracted]);
 
   return (
     <div className="min-h-screen bg-cactus-bg text-white">
