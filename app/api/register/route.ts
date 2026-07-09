@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
+
 import {
   getBrevoApiKey,
   getBrevoErrorMessage,
@@ -7,6 +9,7 @@ import {
   parseListId,
   sendToBrevo,
 } from "@/lib/brevo";
+import { appendRegistration, isGoogleSheetsConfigured } from "@/lib/google-sheets";
 
 interface RegisterPayload {
   firstName: string;
@@ -35,7 +38,10 @@ function validatePayload(body: Partial<RegisterPayload>): string | null {
   return null;
 }
 
-function buildRegisterAttributes(data: RegisterPayload): Record<string, string | boolean> {
+function buildRegisterAttributes(
+  data: RegisterPayload,
+  registrationId: string,
+): Record<string, string | boolean> {
   const attributes: Record<string, string | boolean> = {
     NOMBRE: data.firstName.trim(),
     APELLIDOS: data.lastName.trim(),
@@ -45,6 +51,7 @@ function buildRegisterAttributes(data: RegisterPayload): Record<string, string |
     EVENT_INTEREST: data.interest.trim(),
     EVENT_STATUS: "registered",
     EVENT_CONSENT: data.consent,
+    EVENT_REGISTRATION_ID: registrationId,
   };
 
   const phone = data.phone?.trim();
@@ -76,9 +83,12 @@ export async function POST(request: Request) {
     }
 
     const data = body as RegisterPayload;
+    const registrationId = randomUUID();
+    const normalizedEmail = normalizeEmail(data.email);
+
     const response = await sendToBrevo({
-      email: normalizeEmail(data.email),
-      attributes: buildRegisterAttributes(data),
+      email: normalizedEmail,
+      attributes: buildRegisterAttributes(data, registrationId),
       listIds: [registeredListId],
       unlinkListIds: [incompleteListId],
       updateEnabled: true,
@@ -89,7 +99,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    let sheetsSynced = false;
+
+    if (isGoogleSheetsConfigured()) {
+      try {
+        await appendRegistration(
+          {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: normalizedEmail,
+            company: data.company,
+            jobTitle: data.jobTitle,
+            phone: data.phone,
+            interest: data.interest,
+          },
+          registrationId,
+        );
+        sheetsSynced = true;
+      } catch (error) {
+        console.error("Google Sheets sync failed:", error);
+      }
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        registrationId,
+        sheetsSynced,
+      },
+      { status: 200 },
+    );
   } catch {
     return NextResponse.json(
       { error: "No pudimos completar el registro" },

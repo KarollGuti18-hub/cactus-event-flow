@@ -1,4 +1,5 @@
 export const BREVO_CONTACTS_URL = "https://api.brevo.com/v3/contacts";
+export const BREVO_SMTP_EMAIL_URL = "https://api.brevo.com/v3/smtp/email";
 
 export interface BrevoContactBody {
   email: string;
@@ -6,6 +7,18 @@ export interface BrevoContactBody {
   listIds?: number[];
   unlinkListIds?: number[];
   updateEnabled: boolean;
+}
+
+export interface BrevoTransactionalEmailBody {
+  to: Array<{ email: string; name?: string }>;
+  templateId?: number;
+  subject?: string;
+  htmlContent?: string;
+  params?: Record<string, string>;
+  sender: {
+    email: string;
+    name: string;
+  };
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -39,6 +52,31 @@ export async function sendToBrevo(body: BrevoContactBody): Promise<Response> {
     },
     body: JSON.stringify(body),
   });
+}
+
+export async function sendTransactionalEmail(
+  body: BrevoTransactionalEmailBody,
+): Promise<Response> {
+  return fetch(BREVO_SMTP_EMAIL_URL, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      "api-key": process.env.BREVO_API_KEY ?? "",
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export function getBrevoSender(): { email: string; name: string } | null {
+  const email = process.env.BREVO_SENDER_EMAIL?.trim();
+  const name = process.env.BREVO_SENDER_NAME?.trim() || "C4C7OPS Tech Summit";
+
+  if (!email) {
+    return null;
+  }
+
+  return { email, name };
 }
 
 export async function getBrevoErrorMessage(response: Response): Promise<string> {
