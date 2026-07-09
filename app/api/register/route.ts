@@ -38,10 +38,7 @@ function validatePayload(body: Partial<RegisterPayload>): string | null {
   return null;
 }
 
-function buildRegisterAttributes(
-  data: RegisterPayload,
-  registrationId: string,
-): Record<string, string | boolean> {
+function buildRegisterAttributes(data: RegisterPayload): Record<string, string | boolean> {
   const attributes: Record<string, string | boolean> = {
     NOMBRE: data.firstName.trim(),
     APELLIDOS: data.lastName.trim(),
@@ -51,7 +48,6 @@ function buildRegisterAttributes(
     EVENT_INTEREST: data.interest.trim(),
     EVENT_STATUS: "registered",
     EVENT_CONSENT: data.consent,
-    EVENT_REGISTRATION_ID: registrationId,
   };
 
   const phone = data.phone?.trim();
@@ -88,7 +84,7 @@ export async function POST(request: Request) {
 
     const response = await sendToBrevo({
       email: normalizedEmail,
-      attributes: buildRegisterAttributes(data, registrationId),
+      attributes: buildRegisterAttributes(data),
       listIds: [registeredListId],
       unlinkListIds: [incompleteListId],
       updateEnabled: true,

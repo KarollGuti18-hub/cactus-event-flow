@@ -367,6 +367,7 @@ export default function Home() {
   const [activeTrack, setActiveTrack] = useState(TRACKS[0].id);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+  const [submitError, setSubmitError] = useState("");
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<FormData>({
@@ -413,6 +414,7 @@ export default function Home() {
     if (Object.keys(errors).length > 0) return;
 
     setFormStatus("submitting");
+    setSubmitError("");
 
     try {
       const response = await fetch("/api/register", {
@@ -421,13 +423,17 @@ export default function Home() {
         body: JSON.stringify(toRegisterPayload(formData)),
       });
 
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+
       if (!response.ok) {
+        setSubmitError(data.error ?? "No pudimos completar el registro");
         setFormStatus("error");
         return;
       }
 
       setFormStatus("success");
     } catch {
+      setSubmitError("Error de conexión. Revisa tu internet e intenta de nuevo.");
       setFormStatus("error");
     }
   }
@@ -954,7 +960,7 @@ export default function Home() {
                   <form onSubmit={handleSubmit} noValidate>
                     {formStatus === "error" && (
                       <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-                        No pudimos completar el registro. Intenta de nuevo.
+                        {submitError || "No pudimos completar el registro. Intenta de nuevo."}
                       </div>
                     )}
                     <div className="grid gap-5 sm:grid-cols-2">
