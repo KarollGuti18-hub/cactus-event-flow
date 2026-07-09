@@ -1,4 +1,4 @@
-import CheckInClient from "./CheckInClient";
+import { redirect } from "next/navigation";
 
 interface CheckInPageProps {
   params: Promise<{ token: string }>;
@@ -6,5 +6,5 @@ interface CheckInPageProps {
 
 export default async function CheckInPage({ params }: CheckInPageProps) {
   const { token } = await params;
-  return <CheckInClient token={token} />;
+  redirect(`/ticket/${token}`);
 }
