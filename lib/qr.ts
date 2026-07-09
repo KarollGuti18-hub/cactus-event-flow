@@ -7,16 +7,21 @@ export function generateQrToken(): string {
   return randomUUID();
 }
 
+export function getTicketUrl(token: string): string {
+  return `${getAppUrl()}/ticket/${token}`;
+}
+
+/** @deprecated Usar getTicketUrl — mantiene compatibilidad con QRs antiguos */
 export function getCheckInUrl(token: string): string {
-  return `${getAppUrl()}/check-in/${token}`;
+  return getTicketUrl(token);
 }
 
 export function getQrImageUrl(token: string): string {
   return `${getAppUrl()}/api/qr/${token}`;
 }
 
-export async function generateQrPng(checkInUrl: string): Promise<Buffer> {
-  return QRCode.toBuffer(checkInUrl, {
+export async function generateQrPng(ticketUrl: string): Promise<Buffer> {
+  return QRCode.toBuffer(ticketUrl, {
     type: "png",
     width: 480,
     margin: 2,

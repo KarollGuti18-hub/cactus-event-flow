@@ -7,9 +7,11 @@ import {
   sendToBrevo,
 } from "@/lib/brevo";
 import { findAttendeeByToken, isGoogleSheetsConfigured, updateAttendeeRow } from "@/lib/google-sheets";
+import { isValidStaffPin } from "@/lib/staff-auth";
 
 interface CheckInPayload {
   token?: string;
+  staffPin?: string;
 }
 
 export async function POST(request: Request) {
@@ -18,11 +20,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Google Sheets no configurado" }, { status: 500 });
     }
 
+    if (!process.env.STAFF_CHECKIN_PIN?.trim()) {
+      return NextResponse.json(
+        { error: "STAFF_CHECKIN_PIN no configurado en Vercel" },
+        { status: 500 },
+      );
+    }
+
     const body = (await request.json()) as CheckInPayload;
     const token = body.token?.trim();
 
     if (!token) {
       return NextResponse.json({ error: "Token requerido" }, { status: 400 });
+    }
+
+    if (!isValidStaffPin(body.staffPin)) {
+      return NextResponse.json({ error: "PIN de staff incorrecto" }, { status: 401 });
     }
 
     const attendee = await findAttendeeByToken(token);

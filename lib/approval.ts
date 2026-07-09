@@ -11,7 +11,7 @@ import {
   isGoogleSheetsConfigured,
   updateAttendeeRow,
 } from "@/lib/google-sheets";
-import { generateQrToken, getCheckInUrl, getQrImageUrl } from "@/lib/qr";
+import { generateQrToken, getQrImageUrl, getTicketUrl } from "@/lib/qr";
 
 export interface ApprovalResult {
   email: string;
@@ -35,7 +35,7 @@ async function syncApprovedContact(attendee: AttendeeRecord, token: string): Pro
       EVENT_STATUS: "approved",
       EVENT_QR_TOKEN: token,
       EVENT_QR_URL: getQrImageUrl(token),
-      EVENT_CHECKIN_URL: getCheckInUrl(token),
+      EVENT_CHECKIN_URL: getTicketUrl(token),
     },
     listIds: approvedListId !== null ? [approvedListId] : [],
     unlinkListIds: registeredListId !== null ? [registeredListId] : [],
@@ -106,14 +106,14 @@ export async function processApprovalByEmail(
       status: "skipped",
       message: "La aprobación ya fue procesada",
       qrImageUrl: getQrImageUrl(attendee.qrToken),
-      checkInUrl: getCheckInUrl(attendee.qrToken),
+      checkInUrl: getTicketUrl(attendee.qrToken),
     };
   }
 
   const token = generateQrToken();
   const approvedAt = new Date().toISOString();
   const qrImageUrl = getQrImageUrl(token);
-  const checkInUrl = getCheckInUrl(token);
+  const checkInUrl = getTicketUrl(token);
 
   await updateAttendeeRow(attendee.rowNumber, {
     status: "aprobado",

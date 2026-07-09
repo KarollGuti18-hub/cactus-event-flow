@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { findAttendeeByToken, isGoogleSheetsConfigured } from "@/lib/google-sheets";
-import { generateQrPng, getCheckInUrl } from "@/lib/qr";
+import { generateQrPng, getTicketUrl } from "@/lib/qr";
 
 interface RouteContext {
   params: Promise<{ token: string }>;
@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: RouteContext) {
       }
     }
 
-    const png = await generateQrPng(getCheckInUrl(token));
+    const png = await generateQrPng(getTicketUrl(token));
 
     return new NextResponse(new Uint8Array(png), {
       status: 200,
