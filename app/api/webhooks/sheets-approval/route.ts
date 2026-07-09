@@ -11,12 +11,7 @@ interface SheetsApprovalPayload {
 
 function isAuthorized(secret: string | undefined): boolean {
   const expected = process.env.SHEETS_WEBHOOK_SECRET?.trim();
-
-  if (!expected) {
-    return false;
-  }
-
-  return secret === expected;
+  return Boolean(expected && secret === expected);
 }
 
 export async function POST(request: Request) {
@@ -28,13 +23,11 @@ export async function POST(request: Request) {
     }
 
     const email = body.email?.trim().toLowerCase();
-
     if (!email) {
       return NextResponse.json({ error: "Email requerido" }, { status: 400 });
     }
 
     const status = parseAttendeeStatus(body.estado);
-
     if (status === "pendiente") {
       return NextResponse.json(
         { error: "El estado debe ser aprobado o rechazado" },
@@ -42,7 +35,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await processApprovalByEmail(email);
+    const result = await processApprovalByEmail(email, { status });
 
     return NextResponse.json({ success: true, result }, { status: 200 });
   } catch (error) {

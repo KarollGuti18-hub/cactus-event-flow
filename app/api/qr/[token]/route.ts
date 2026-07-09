@@ -17,7 +17,6 @@ export async function GET(_request: Request, context: RouteContext) {
 
     if (isGoogleSheetsConfigured()) {
       const attendee = await findAttendeeByToken(token);
-
       if (!attendee || attendee.status !== "aprobado") {
         return NextResponse.json({ error: "QR no válido" }, { status: 404 });
       }

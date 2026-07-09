@@ -86,10 +86,7 @@ async function sendRegistrationToBrevo(
 
   const { EVENT_PHONE: _removed, ...attributesWithoutPhone } = attributes;
 
-  return sendToBrevo({
-    ...body,
-    attributes: attributesWithoutPhone,
-  });
+  return sendToBrevo({ ...body, attributes: attributesWithoutPhone });
 }
 
 export async function POST(request: Request) {
@@ -150,17 +147,10 @@ export async function POST(request: Request) {
         sheetsError = error instanceof Error ? error.message : "Error al guardar en Sheets";
         console.error("Google Sheets sync failed:", error);
       }
-    } else {
-      sheetsError = "Faltan GOOGLE_APPS_SCRIPT_URL o SHEETS_WEBHOOK_SECRET en Vercel";
     }
 
     return NextResponse.json(
-      {
-        success: true,
-        registrationId,
-        sheetsSynced,
-        sheetsError,
-      },
+      { success: true, registrationId, sheetsSynced, sheetsError },
       { status: 200 },
     );
   } catch {

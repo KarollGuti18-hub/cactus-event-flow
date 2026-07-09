@@ -45,10 +45,7 @@ export default function CheckInClient({ token }: CheckInPageProps) {
         if (cancelled) return;
 
         if (!response.ok) {
-          setState({
-            status: "error",
-            message: data.error ?? "No pudimos validar el acceso",
-          });
+          setState({ status: "error", message: data.error ?? "No pudimos validar el acceso" });
           return;
         }
 
@@ -61,19 +58,13 @@ export default function CheckInClient({ token }: CheckInPageProps) {
         });
       } catch {
         if (!cancelled) {
-          setState({
-            status: "error",
-            message: "Error de conexión al registrar asistencia",
-          });
+          setState({ status: "error", message: "Error de conexión al registrar asistencia" });
         }
       }
     }
 
     void checkIn();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [token]);
 
   const isPositive = state.status === "success" || state.status === "already";
@@ -81,17 +72,11 @@ export default function CheckInClient({ token }: CheckInPageProps) {
   return (
     <main className="min-h-screen bg-cactus-bg px-6 py-16 text-white">
       <div className="mx-auto max-w-lg rounded-3xl border border-[#7F9B28]/20 bg-cactus-bg-card p-8 text-center">
-        <p className="text-sm font-semibold uppercase tracking-widest text-cactus-green">
-          Check-in
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-cactus-green">Check-in</p>
 
         <div
           className={`mx-auto mt-8 flex h-20 w-20 items-center justify-center rounded-full ${
-            state.status === "loading"
-              ? "bg-white/10"
-              : isPositive
-                ? "bg-cactus-green/20"
-                : "bg-red-500/20"
+            state.status === "loading" ? "bg-white/10" : isPositive ? "bg-cactus-green/20" : "bg-red-500/20"
           }`}
         >
           {state.status === "loading" ? (
