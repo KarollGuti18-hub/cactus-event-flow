@@ -51,11 +51,45 @@ function buildRegisterAttributes(data: RegisterPayload): Record<string, string |
   };
 
   const phone = data.phone?.trim();
-  if (phone?.startsWith("+")) {
-    attributes.SMS = phone;
+  if (phone) {
+    attributes.EVENT_PHONE = phone;
   }
 
   return attributes;
+}
+
+async function sendRegistrationToBrevo(
+  email: string,
+  attributes: Record<string, string | boolean>,
+  registeredListId: number,
+  incompleteListId: number,
+): Promise<Response> {
+  const body = {
+    email,
+    attributes,
+    listIds: [registeredListId],
+    unlinkListIds: [incompleteListId],
+    updateEnabled: true,
+  };
+
+  const response = await sendToBrevo(body);
+
+  if (response.ok) {
+    return response;
+  }
+
+  const message = await getBrevoErrorMessage(response);
+
+  if (!message.toLowerCase().includes("sms")) {
+    return Response.json({ message }, { status: response.status });
+  }
+
+  const { EVENT_PHONE: _removed, ...attributesWithoutPhone } = attributes;
+
+  return sendToBrevo({
+    ...body,
+    attributes: attributesWithoutPhone,
+  });
 }
 
 export async function POST(request: Request) {
@@ -82,13 +116,12 @@ export async function POST(request: Request) {
     const registrationId = randomUUID();
     const normalizedEmail = normalizeEmail(data.email);
 
-    const response = await sendToBrevo({
-      email: normalizedEmail,
-      attributes: buildRegisterAttributes(data),
-      listIds: [registeredListId],
-      unlinkListIds: [incompleteListId],
-      updateEnabled: true,
-    });
+    const response = await sendRegistrationToBrevo(
+      normalizedEmail,
+      buildRegisterAttributes(data),
+      registeredListId,
+      incompleteListId,
+    );
 
     if (!response.ok) {
       const message = await getBrevoErrorMessage(response);
@@ -96,6 +129,7 @@ export async function POST(request: Request) {
     }
 
     let sheetsSynced = false;
+    let sheetsError: string | undefined;
 
     if (isGoogleSheetsConfigured()) {
       try {
@@ -113,8 +147,11 @@ export async function POST(request: Request) {
         );
         sheetsSynced = true;
       } catch (error) {
+        sheetsError = error instanceof Error ? error.message : "Error al guardar en Sheets";
         console.error("Google Sheets sync failed:", error);
       }
+    } else {
+      sheetsError = "Faltan GOOGLE_APPS_SCRIPT_URL o SHEETS_WEBHOOK_SECRET en Vercel";
     }
 
     return NextResponse.json(
@@ -122,6 +159,7 @@ export async function POST(request: Request) {
         success: true,
         registrationId,
         sheetsSynced,
+        sheetsError,
       },
       { status: 200 },
     );
