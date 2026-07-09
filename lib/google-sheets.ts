@@ -12,7 +12,6 @@ interface AppsScriptResponse<T> {
   error?: string;
   attendee?: AttendeeRecord | null;
   attendees?: AttendeeRecord[];
-  data?: T;
 }
 
 export function isGoogleSheetsConfigured(): boolean {

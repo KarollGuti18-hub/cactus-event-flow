@@ -953,7 +953,7 @@ export default function Home() {
                     </div>
                     <h3 className="mt-6 text-2xl font-bold">¡Registro exitoso!</h3>
                     <p className="mt-3 max-w-sm text-white/55">
-                      Tu solicitud fue recibida. Revisaremos tu registro y te enviaremos por correo tu código QR de acceso si es aprobado.
+                      Tu solicitud fue recibida. Revisaremos tu registro y te contactaremos si es aprobado.
                     </p>
                   </div>
                 ) : (

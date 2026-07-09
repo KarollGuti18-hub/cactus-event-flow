@@ -49,7 +49,6 @@ export async function POST(request: Request) {
       });
 
       const apiKey = getBrevoApiKey();
-
       if (apiKey) {
         const response = await sendToBrevo({
           email: normalizeEmail(attendee.email),
@@ -62,27 +61,23 @@ export async function POST(request: Request) {
         });
 
         if (!response.ok) {
-          const message = await getBrevoErrorMessage(response);
-          console.error("Brevo check-in sync failed:", message);
+          console.error("Brevo check-in sync failed:", await getBrevoErrorMessage(response));
         }
       }
     }
 
-    return NextResponse.json(
-      {
-        success: true,
-        alreadyCheckedIn,
-        attendee: {
-          firstName: attendee.firstName,
-          lastName: attendee.lastName,
-          email: attendee.email,
-          company: attendee.company,
-          jobTitle: attendee.jobTitle,
-          checkedInAt: alreadyCheckedIn ? attendee.checkedInAt : new Date().toISOString(),
-        },
+    return NextResponse.json({
+      success: true,
+      alreadyCheckedIn,
+      attendee: {
+        firstName: attendee.firstName,
+        lastName: attendee.lastName,
+        email: attendee.email,
+        company: attendee.company,
+        jobTitle: attendee.jobTitle,
+        checkedInAt: alreadyCheckedIn ? attendee.checkedInAt : new Date().toISOString(),
       },
-      { status: 200 },
-    );
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "No pudimos registrar la asistencia";
     return NextResponse.json({ error: message }, { status: 500 });
