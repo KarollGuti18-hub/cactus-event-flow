@@ -393,10 +393,10 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-20 mb-20 self-start lg:absolute lg:bottom-0 lg:right-8 lg:top-20 lg:mb-0 lg:w-[25rem]"
+          className="section-anchor relative z-20 mb-20 self-start lg:fixed lg:right-8 lg:top-24 lg:mb-0 lg:w-[25rem] lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto 2xl:right-[calc((100vw-80rem)/2+2rem)]"
         >
-          <div className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-black/25 shadow-[0_30px_100px_rgba(0,0,0,0.3)] backdrop-blur-2xl lg:sticky lg:top-20 lg:max-h-[calc(100svh-5rem)] lg:overflow-y-auto">
-            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/10 via-transparent to-transparent px-6 py-5">
+          <div className="overflow-hidden rounded-[1.75rem] border border-white/20 bg-black/15 shadow-[0_30px_100px_rgba(0,0,0,0.25)] backdrop-blur-md">
+            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/8 via-transparent to-transparent px-6 py-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cactus-green">
