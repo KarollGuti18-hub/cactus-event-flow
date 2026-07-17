@@ -320,7 +320,7 @@ export default function CloudConfessionsLanding() {
               priority
               quality={90}
               sizes="100vw"
-              className="object-cover object-[68%_center] sm:object-center"
+              className="object-contain object-center"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#020b07]/95 via-[#020b07]/20 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
