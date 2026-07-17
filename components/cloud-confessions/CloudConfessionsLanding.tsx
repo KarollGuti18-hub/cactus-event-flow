@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import {
@@ -264,9 +265,14 @@ export default function CloudConfessionsLanding() {
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
           <a href="#inicio" aria-label="Ir al inicio" className="flex shrink-0 items-center">
-            <span className="text-xl font-extrabold tracking-[-0.05em] sm:text-2xl">
-              C4C7<span className="text-cactus-green">OPS</span>
-            </span>
+            <Image
+              src="/logo-c4c7ops-white.png"
+              alt="C4C7OPS"
+              width={168}
+              height={44}
+              priority
+              className="h-8 w-auto object-contain sm:h-9"
+            />
           </a>
 
           <div className="hidden items-center gap-7 text-xs font-medium text-white/50 md:flex">
