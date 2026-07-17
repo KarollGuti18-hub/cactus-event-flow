@@ -309,19 +309,21 @@ export default function CloudConfessionsLanding() {
 
       <main
         id="inicio"
-        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-28 sm:px-8 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
+        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-8rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:py-20">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:py-20">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <Image
-              src="/cloud-confessions-banner.jpg"
-              alt=""
-              fill
-              priority
-              quality={90}
-              sizes="100vw"
-              className="object-contain object-center"
-            />
+            <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[88%]">
+              <Image
+                src="/cloud-confessions-banner.jpg"
+                alt=""
+                fill
+                priority
+                quality={90}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 88vw"
+                className="object-contain object-center"
+              />
+            </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#020b07]/95 via-[#020b07]/20 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
