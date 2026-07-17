@@ -358,7 +358,7 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-10 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-5 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+          className="section-anchor relative z-10 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
         >
           <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/20 bg-[#151518]/95 shadow-[0_30px_100px_rgba(0,0,0,0.5),0_0_0_1px_rgba(127,155,40,0.04)] backdrop-blur-2xl">
             <div className="border-b border-white/8 bg-gradient-to-br from-cactus-green/14 to-transparent px-6 py-5">
@@ -702,41 +702,6 @@ export default function CloudConfessionsLanding() {
                   </span>
                 </div>
               ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-5">
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
-            {cloudConfessionsCopy.detailsEyebrow}
-          </p>
-          <h2 className="mt-5 max-w-3xl text-4xl font-extrabold leading-tight tracking-[-0.045em] sm:text-5xl">
-            {cloudConfessionsCopy.detailsTitle}
-          </h2>
-
-          <div className="mt-10 rounded-3xl border border-white/9 bg-white/[0.025] p-7 sm:p-9">
-            <div className="grid gap-7 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/30">
-                  Fecha
-                </p>
-                <p className="mt-2 font-semibold text-white/75">
-                  {cloudConfessionsConfig.date}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/30">
-                  Dirección
-                </p>
-                <p className="mt-2 font-semibold text-white/75">
-                  {cloudConfessionsConfig.exactAddress}
-                </p>
-              </div>
-            </div>
-            <div className="mt-8 border-t border-white/8 pt-7">
-              <p className="text-sm leading-7 text-white/52">
-                {cloudConfessionsCopy.approvalNotice}
-              </p>
             </div>
           </div>
         </section>

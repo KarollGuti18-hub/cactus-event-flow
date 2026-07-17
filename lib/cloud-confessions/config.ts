@@ -63,10 +63,6 @@ export const cloudConfessionsCopy = {
         "Llega al Summit relajado, con nuevas conexiones y en un ambiente cercano, no una conferencia más.",
     },
   ],
-  detailsEyebrow: "Información del evento",
-  detailsTitle: "Lo práctico, sin rodeos",
-  approvalNotice:
-    "El evento es por invitación y con cupos limitados. Nuestro equipo confirmará posteriormente tu asistencia y compartirá la dirección exacta con las personas aprobadas.",
   registrationEyebrow: "Solicitud de registro",
   registrationTitle: "Solicita tu cupo",
   registrationDescription:
