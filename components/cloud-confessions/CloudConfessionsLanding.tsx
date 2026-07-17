@@ -329,7 +329,7 @@ export default function CloudConfessionsLanding() {
           </div>
 
           <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
-            <div className="max-w-3xl">
+            <div className="max-w-3xl lg:max-w-[calc(100%-27rem)]">
               <div className="inline-flex items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-cactus-green">
                 <span className="h-1.5 w-1.5 rounded-full bg-cactus-green" />
                 {cloudConfessionsCopy.invitationBadge}
@@ -338,7 +338,7 @@ export default function CloudConfessionsLanding() {
               <p className="mt-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
                 {cloudConfessionsCopy.summitContext}
               </p>
-              <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
+              <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[5.25rem] xl:text-[6.25rem]">
                 Cloud
                 <span className="block text-gradient-green">Confessions</span>
                 <span className="mt-4 block text-2xl font-semibold tracking-[-0.035em] text-white/72 sm:text-4xl">
@@ -393,10 +393,10 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-10 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-2 lg:row-span-3 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+          className="section-anchor relative z-20 mb-20 self-start lg:sticky lg:top-20 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:mb-0 lg:max-h-[calc(100svh-5rem)] lg:overflow-y-auto"
         >
-          <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/20 bg-[#151518]/95 shadow-[0_30px_100px_rgba(0,0,0,0.5),0_0_0_1px_rgba(127,155,40,0.04)] backdrop-blur-2xl">
-            <div className="border-b border-white/8 bg-gradient-to-br from-cactus-green/14 to-transparent px-6 py-5">
+          <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/25 bg-black/70 shadow-[0_30px_100px_rgba(0,0,0,0.55),0_0_0_1px_rgba(127,155,40,0.08)] backdrop-blur-3xl">
+            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/18 via-black/20 to-transparent px-6 py-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cactus-green">
