@@ -311,74 +311,78 @@ export default function CloudConfessionsLanding() {
         id="inicio"
         className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-28 sm:px-8 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-8rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden py-12 lg:col-span-2 lg:row-start-1 lg:py-20">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-8rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:py-20">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <Image
-              src="/cloud-confessions-banner.png"
-              alt=""
-              fill
-              priority
-              sizes="100vw"
-              className="object-contain object-top opacity-90"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] via-[#020b07]/92 to-[#020b07]/10" />
-            <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/20" />
+            <div className="absolute inset-y-0 right-0 flex w-full items-center justify-end sm:w-[62%] lg:w-[58%]">
+              <Image
+                src="/cloud-confessions-banner.jpg"
+                alt=""
+                width={1024}
+                height={414}
+                priority
+                quality={100}
+                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 62vw, 1024px"
+                className="h-auto w-full max-w-[1024px] object-contain object-right"
+              />
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] via-[#020b07]/88 to-transparent sm:via-[#020b07]/55" />
+            <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
 
           <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
             <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-cactus-green">
-              <span className="h-1.5 w-1.5 rounded-full bg-cactus-green" />
-              {cloudConfessionsCopy.invitationBadge}
-            </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-cactus-green">
+                <span className="h-1.5 w-1.5 rounded-full bg-cactus-green" />
+                {cloudConfessionsCopy.invitationBadge}
+              </div>
 
-            <p className="mt-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
-              {cloudConfessionsCopy.summitContext}
-            </p>
-            <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
-              Cloud
-              <span className="block text-gradient-green">Confessions</span>
-              <span className="mt-4 block text-2xl font-semibold tracking-[-0.035em] text-white/72 sm:text-4xl">
-                Breakfast
-              </span>
-            </h1>
-            <p className="mt-8 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl sm:leading-9">
-              {cloudConfessionsCopy.heroLead}
-            </p>
-
-            <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-3">
-              {eventFacts.map((fact) => (
-                <div
-                  key={fact.label}
-                  className="group rounded-2xl border border-white/9 bg-white/[0.035] p-4 backdrop-blur-sm transition hover:border-cactus-green/25 hover:bg-white/[0.055]"
-                >
-                  <span className="text-cactus-green">
-                    <DetailIcon type={fact.icon} />
-                  </span>
-                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white/32">
-                    {fact.label}
-                  </p>
-                  <p className="mt-1.5 text-sm font-semibold leading-5 text-white/75">
-                    {fact.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <a
-                href="#registro"
-                className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
-              >
-                {cloudConfessionsConfig.ctaLabel}
-                <span aria-hidden="true">→</span>
-              </a>
-              <p className="text-xs uppercase tracking-[0.16em] text-white/32">
-                {cloudConfessionsConfig.limitedSpots
-                  ? "Cupos limitados · Solicitud sujeta a aprobación"
-                  : "Cupos disponibles"}
+              <p className="mt-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
+                {cloudConfessionsCopy.summitContext}
               </p>
-            </div>
+              <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
+                Cloud
+                <span className="block text-gradient-green">Confessions</span>
+                <span className="mt-4 block text-2xl font-semibold tracking-[-0.035em] text-white/72 sm:text-4xl">
+                  Breakfast
+                </span>
+              </h1>
+              <p className="mt-8 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl sm:leading-9">
+                {cloudConfessionsCopy.heroLead}
+              </p>
+
+              <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-3">
+                {eventFacts.map((fact) => (
+                  <div
+                    key={fact.label}
+                    className="group rounded-2xl border border-white/9 bg-white/[0.035] p-4 backdrop-blur-sm transition hover:border-cactus-green/25 hover:bg-white/[0.055]"
+                  >
+                    <span className="text-cactus-green">
+                      <DetailIcon type={fact.icon} />
+                    </span>
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white/32">
+                      {fact.label}
+                    </p>
+                    <p className="mt-1.5 text-sm font-semibold leading-5 text-white/75">
+                      {fact.value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+                <a
+                  href="#registro"
+                  className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
+                >
+                  {cloudConfessionsConfig.ctaLabel}
+                  <span aria-hidden="true">→</span>
+                </a>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/32">
+                  {cloudConfessionsConfig.limitedSpots
+                    ? "Cupos limitados · Solicitud sujeta a aprobación"
+                    : "Cupos disponibles"}
+                </p>
+              </div>
             </div>
 
             <div className="mt-16 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25">
