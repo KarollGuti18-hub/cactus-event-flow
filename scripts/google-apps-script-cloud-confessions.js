@@ -317,12 +317,16 @@ function upsertRegistration(data) {
 
     const existing = findByEmailInSheet(sheet, email);
     const now = new Date().toISOString();
+    const isReopeningRejected = existing && existing.status === "rechazado";
     const id = existing && existing.id
       ? existing.id
       : safeText(data.registrationId);
-    const registeredAt = existing && existing.registeredAt
+    const registeredAt = existing && existing.registeredAt && !isReopeningRejected
       ? existing.registeredAt
       : String(data.registeredAt || now);
+    const status = existing && !isReopeningRejected
+      ? existing.status
+      : "pendiente_aprobacion";
 
     const values = [
       id,
@@ -334,13 +338,13 @@ function upsertRegistration(data) {
       safeText(data.telefono),
       data.consent === true,
       data.origin === "invitation_link" ? "invitation_link" : "landing",
-      existing ? existing.status : "pendiente_aprobacion",
+      status,
       registeredAt,
-      existing ? existing.approvedAt : "",
-      existing ? existing.qrToken : "",
-      existing ? existing.attended : "",
-      existing ? existing.checkedInAt : "",
-      existing ? existing.calendarInvitedAt : "",
+      isReopeningRejected ? "" : existing ? existing.approvedAt : "",
+      isReopeningRejected ? "" : existing ? existing.qrToken : "",
+      isReopeningRejected ? "" : existing ? existing.attended : "",
+      isReopeningRejected ? "" : existing ? existing.checkedInAt : "",
+      isReopeningRejected ? "" : existing ? existing.calendarInvitedAt : "",
       now,
     ];
 

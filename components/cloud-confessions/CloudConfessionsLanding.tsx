@@ -28,6 +28,7 @@ interface CloudConfessionsFormData {
 type FormField = keyof CloudConfessionsFormData;
 type FormErrors = Partial<Record<FormField, string>>;
 type FormStatus = "idle" | "submitting" | "success" | "error";
+type SuccessKind = "new" | "pending" | "approved";
 
 const INITIAL_FORM_DATA: CloudConfessionsFormData = {
   nombre: "",
@@ -73,6 +74,8 @@ export default function CloudConfessionsLanding() {
     useState<CloudConfessionsFormData>(INITIAL_FORM_DATA);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formStatus, setFormStatus] = useState<FormStatus>("idle");
+  const [successKind, setSuccessKind] = useState<SuccessKind>("new");
+  const [ticketUrl, setTicketUrl] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [origin, setOrigin] = useState<CloudConfessionsOrigin>("landing");
@@ -144,6 +147,9 @@ export default function CloudConfessionsLanding() {
 
       const result = (await response.json().catch(() => ({}))) as {
         error?: string;
+        alreadyRegistered?: boolean;
+        status?: "pending_approval" | "approved";
+        ticketUrl?: string;
       };
 
       if (!response.ok) {
@@ -151,6 +157,17 @@ export default function CloudConfessionsLanding() {
         setSubmitError(result.error ?? cloudConfessionsCopy.form.genericError);
         setFormStatus("error");
         return;
+      }
+
+      if (result.status === "approved") {
+        setSuccessKind("approved");
+        setTicketUrl(result.ticketUrl?.trim() ?? "");
+      } else if (result.alreadyRegistered) {
+        setSuccessKind("pending");
+        setTicketUrl("");
+      } else {
+        setSuccessKind("new");
+        setTicketUrl("");
       }
 
       setFormStatus("success");
@@ -399,10 +416,28 @@ export default function CloudConfessionsLanding() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <h3 className="mt-7 text-2xl font-bold">Solicitud recibida</h3>
+                  <h3 className="mt-7 text-2xl font-bold">
+                    {successKind === "approved"
+                      ? "Cupo ya confirmado"
+                      : successKind === "pending"
+                        ? "Solicitud ya recibida"
+                        : "Solicitud recibida"}
+                  </h3>
                   <p className="mt-4 text-sm leading-7 text-white/58">
-                    {cloudConfessionsConfig.confirmationMessage}
+                    {successKind === "approved"
+                      ? cloudConfessionsConfig.alreadyApprovedMessage
+                      : successKind === "pending"
+                        ? cloudConfessionsConfig.alreadyPendingMessage
+                        : cloudConfessionsConfig.confirmationMessage}
                   </p>
+                  {successKind === "approved" && ticketUrl ? (
+                    <a
+                      href={ticketUrl}
+                      className="mt-7 inline-flex items-center justify-center rounded-full bg-cactus-green px-5 py-3 text-sm font-semibold text-black transition hover:bg-cactus-green-hover"
+                    >
+                      Abrir mi entrada
+                    </a>
+                  ) : null}
                 </div>
               ) : (
                 <form

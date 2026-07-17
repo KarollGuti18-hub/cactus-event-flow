@@ -1,4 +1,5 @@
 import {
+  BREVO_CONTACTS_URL,
   getBrevoApiKey,
   normalizeEmail,
   sendToBrevo,
@@ -29,6 +30,18 @@ interface CloudConfessionsListIds {
   registered: number;
   approved: number;
 }
+
+interface CloudConfessionsBrevoContact {
+  email?: string;
+  listIds?: number[];
+  attributes?: Record<string, string | boolean | number | null>;
+}
+
+const COMPLETED_STATUSES = new Set([
+  "pending_approval",
+  "approved",
+  "checked_in",
+]);
 
 function parsePositiveListId(value: string | undefined): number | null {
   if (!value?.trim()) return null;
@@ -133,6 +146,50 @@ export function buildCloudConfessionsAttributes({
   return attributes;
 }
 
+export async function getCloudConfessionsContact(
+  email: string,
+): Promise<CloudConfessionsBrevoContact | null> {
+  const apiKey = getBrevoApiKey();
+  if (!apiKey) return null;
+
+  const response = await fetch(
+    `${BREVO_CONTACTS_URL}/${encodeURIComponent(normalizeEmail(email))}`,
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+      },
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`No se pudo consultar el contacto en Brevo (${response.status})`);
+  }
+
+  return (await response.json()) as CloudConfessionsBrevoContact;
+}
+
+export function hasCloudConfessionsCompletedRegistration(
+  contact: CloudConfessionsBrevoContact | null,
+  listIds: CloudConfessionsListIds,
+): boolean {
+  if (!contact) return false;
+
+  const status = String(contact.attributes?.CC_EVENT_STATUS ?? "")
+    .trim()
+    .toLowerCase();
+  if (COMPLETED_STATUSES.has(status)) return true;
+
+  const currentListIds = contact.listIds ?? [];
+  return (
+    currentListIds.includes(listIds.registered) ||
+    currentListIds.includes(listIds.approved)
+  );
+}
+
 export async function upsertCloudConfessionsContact({
   email,
   attributes,
@@ -140,16 +197,18 @@ export async function upsertCloudConfessionsContact({
   unlinkListIds,
 }: {
   email: string;
-  attributes: Record<string, string | boolean>;
+  attributes?: Record<string, string | boolean>;
   listIds?: number[];
   unlinkListIds?: number[];
 }): Promise<Response> {
   const body: BrevoContactBody = {
     email: normalizeEmail(email),
-    attributes,
     updateEnabled: true,
   };
 
+  if (attributes && Object.keys(attributes).length > 0) {
+    body.attributes = attributes;
+  }
   if (listIds?.length) body.listIds = listIds;
   if (unlinkListIds?.length) body.unlinkListIds = unlinkListIds;
 

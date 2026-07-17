@@ -15,6 +15,10 @@ export const cloudConfessionsConfig = {
   ctaLabel: "Solicitar mi cupo",
   confirmationMessage:
     "Recibimos tu solicitud para Cloud Confession Breakfast. Nuestro equipo revisará tu registro y te confirmará el cupo próximamente.",
+  alreadyPendingMessage:
+    "Este correo ya tiene una solicitud en revisión. Te confirmaremos el cupo cuando la revisemos.",
+  alreadyApprovedMessage:
+    "Este correo ya tiene un cupo aprobado. Revisa tu correo de confirmación o abre tu entrada desde el enlace que te enviamos.",
   limitedSpots: true,
   invitationOnly: true,
   sheetName: "Registros",

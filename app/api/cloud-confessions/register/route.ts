@@ -9,9 +9,11 @@ import {
   upsertCloudConfessionsContact,
 } from "@/lib/cloud-confessions/brevo";
 import {
+  findCloudConfessionsAttendeeByEmail,
   isCloudConfessionsGoogleSheetsConfigured,
   upsertCloudConfessionsRegistration,
 } from "@/lib/cloud-confessions/google-sheets";
+import { getCloudConfessionsTicketUrl } from "@/lib/cloud-confessions/qr";
 import type { CloudConfessionsRegistrationPayload } from "@/lib/cloud-confessions/types";
 import { validateRegistrationPayload } from "@/lib/cloud-confessions/validation";
 
@@ -36,8 +38,96 @@ export async function POST(request: Request) {
     }
 
     const data = validation.data;
-    const registrationId = randomUUID();
-    const registeredAt = new Date().toISOString();
+    const sheetsConfigured = isCloudConfessionsGoogleSheetsConfigured();
+
+    let existing = null;
+    if (sheetsConfigured) {
+      try {
+        existing = await findCloudConfessionsAttendeeByEmail(data.email);
+      } catch (error) {
+        console.error("Cloud Confession duplicate lookup failed", {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : "unknown",
+        });
+      }
+    }
+
+    if (existing?.status === "aprobado") {
+      return NextResponse.json(
+        {
+          success: true,
+          alreadyRegistered: true,
+          status: "approved",
+          registrationId: existing.id,
+          ...(existing.qrToken
+            ? { ticketUrl: getCloudConfessionsTicketUrl(existing.qrToken) }
+            : {}),
+        },
+        { status: 200 },
+      );
+    }
+
+    if (existing?.status === "pendiente_aprobacion") {
+      const brevoResponse = await upsertCloudConfessionsContact({
+        email: data.email,
+        attributes: {
+          ...buildSharedContactAttributes({
+            firstName: data.firstName,
+            lastName: data.lastName,
+            company: data.company,
+            jobTitle: data.jobTitle,
+            telefono: data.telefono,
+          }),
+          ...buildCloudConfessionsAttributes({
+            status: "pending_approval",
+            consent: data.consent,
+            origin: data.origin,
+            registeredAt: existing.registeredAt,
+          }),
+        },
+        listIds: [listIds.registered],
+        unlinkListIds: [listIds.visited, listIds.incomplete],
+      });
+
+      if (!brevoResponse.ok) {
+        console.error("Cloud Confession duplicate registration sync failed", {
+          status: brevoResponse.status,
+        });
+        return NextResponse.json(
+          { error: "No pudimos completar la solicitud" },
+          { status: 502 },
+        );
+      }
+
+      let sheetsSynced = false;
+      try {
+        await upsertCloudConfessionsRegistration(
+          data,
+          existing.id || randomUUID(),
+          existing.registeredAt,
+        );
+        sheetsSynced = true;
+      } catch (error) {
+        console.error("Cloud Confession duplicate Sheets sync failed", {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : "unknown",
+        });
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          alreadyRegistered: true,
+          status: "pending_approval",
+          registrationId: existing.id,
+          sheetsSynced,
+        },
+        { status: 200 },
+      );
+    }
+
+    const registrationId = existing?.id || randomUUID();
+    const registeredAt = existing?.registeredAt || new Date().toISOString();
 
     const brevoResponse = await upsertCloudConfessionsContact({
       email: data.email,
@@ -57,7 +147,7 @@ export async function POST(request: Request) {
         }),
       },
       listIds: [listIds.registered],
-      unlinkListIds: [listIds.incomplete],
+      unlinkListIds: [listIds.visited, listIds.incomplete, listIds.approved],
     });
 
     if (!brevoResponse.ok) {
@@ -73,7 +163,7 @@ export async function POST(request: Request) {
     let sheetsSynced = false;
     let sheetsError: string | undefined;
 
-    if (isCloudConfessionsGoogleSheetsConfigured()) {
+    if (sheetsConfigured) {
       try {
         await upsertCloudConfessionsRegistration(
           data,
@@ -92,6 +182,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
+        alreadyRegistered: false,
+        status: "pending_approval",
         registrationId,
         sheetsSynced,
         ...(sheetsError ? { sheetsError } : {}),
