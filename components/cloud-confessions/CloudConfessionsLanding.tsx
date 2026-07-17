@@ -313,19 +313,19 @@ export default function CloudConfessionsLanding() {
       >
         <section className="relative left-1/2 flex min-h-[calc(100svh-8rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:py-20">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <div className="absolute inset-y-0 right-0 flex w-full items-center justify-end sm:w-[62%] lg:w-[58%]">
+            <div className="absolute inset-y-0 right-0 flex w-full items-center justify-end sm:w-[68%] lg:w-[64%]">
               <Image
                 src="/cloud-confessions-banner.jpg"
                 alt=""
-                width={1024}
-                height={414}
+                width={3794}
+                height={1536}
                 priority
-                quality={100}
-                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 62vw, 1024px"
-                className="h-auto w-full max-w-[1024px] object-contain object-right"
+                quality={90}
+                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 70vw, 1920px"
+                className="h-full w-full object-cover object-right"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] via-[#020b07]/88 to-transparent sm:via-[#020b07]/55" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] via-[#020b07]/82 to-transparent sm:via-[#020b07]/45" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
 
