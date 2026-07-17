@@ -3,7 +3,7 @@ export const cloudConfessionsConfig = {
   name: "Cloud Confessions Breakfast",
   organizer: "C4C7OPS",
   description:
-    "Un desayuno privado para conversar con honestidad sobre infraestructura, cloud y las decisiones que tomamos construyendo sobre AWS.",
+    "Un desayuno privado antes del AWS Summit Bogotá para compartir mesa, ideas y aprendizajes reales de cloud.",
   date: "Pendiente de confirmación",
   time: "7:00 a. m.",
   publicLocation: "A pocos pasos de Ágora Bogotá",
@@ -22,52 +22,55 @@ export const cloudConfessionsCopy = {
   invitationBadge: "Desayuno privado · Por invitación",
   summitContext: "Desayuno previo al AWS Summit Bogotá",
   heroLead:
-    "Una conversación honesta sobre lo que funciona, lo que duele y lo que aprendemos construyendo en la nube.",
+    "Empieza el día con buen desayuno, mesa pequeña y charla real entre personas que construyen y operan en AWS.",
   conversationTopics: [
-    "Decisiones técnicas difíciles",
-    "Operación y confiabilidad",
-    "Fricciones construyendo en AWS",
-    "Aprendizajes entre equipos",
+    "Qué nos está costando más de lo esperado",
+    "Lo que sí nos funcionó en producción",
+    "Atajos que preferimos no repetir",
+    "Preguntas que normalmente no salen en un keynote",
   ],
   audienceTags: ["Infraestructura", "Cloud", "DevOps", "SRE", "Plataforma", "AWS"],
-  conversationNote:
-    "Un espacio cercano para compartir lo que normalmente no cabe en una presentación.",
+  formatNoteTitle: "Mesa, no escenario",
+  formatNote:
+    "Café, comida buena y tiempo suficiente para hablar. Sin slides interminables ni pitch comercial.",
+  topicsEyebrow: "En la mesa",
+  topicsTitle: "De qué vamos a hablar entre bocados",
   aboutEyebrow: "Qué es Cloud Confessions",
-  aboutTitle: "Antes del Summit, hablemos sin filtros",
+  aboutTitle: "Primero desayunamos. Después, el Summit.",
   aboutDescription:
-    "Un desayuno entre profesionales que toman decisiones de infraestructura todos los días. Sin presentaciones formales ni discursos comerciales: experiencias reales, aprendizajes útiles y nuevas conexiones antes de llegar al AWS Summit.",
+    "Es un encuentro cercano, a pocos pasos de Ágora Bogotá, pensado para llegar al AWS Summit con energía, contexto y nuevas caras. Compartimos mesa, comemos rico y hablamos de lo que realmente pasa cuando construyes en la nube.",
   benefitsEyebrow: "Por qué asistir",
-  benefitsTitle: "Una mesa para quienes operan la nube de verdad",
+  benefitsTitle: "Más que un registro: una mañana bien empezada",
   benefits: [
     {
-      title: "Conversaciones honestas",
+      title: "Desayuno de verdad",
       description:
-        "Decisiones difíciles, errores, aprendizajes y prácticas que sí funcionan en equipos reales.",
+        "Buena comida, buen café y el tiempo justo para sentarte sin prisa antes de que arranque el Summit.",
     },
     {
-      title: "Networking relevante",
+      title: "Mesa con gente afín",
       description:
-        "Conecta con profesionales de infraestructura, plataforma, DevOps, SRE, tecnología y AWS.",
+        "Personas de infraestructura, plataforma, DevOps, SRE y tecnología que viven los mismos retos día a día.",
     },
     {
-      title: "Desayuno antes del Summit",
+      title: "El momento justo",
       description:
-        "Empieza el día cerca de Ágora Bogotá, con buena conversación y una comunidad técnica cercana.",
+        "Llegas temprano, cerca del venue, y entras al AWS Summit ya calentado y con mejores conversaciones.",
     },
     {
-      title: "Experiencias compartidas",
+      title: "Formato íntimo",
       description:
-        "Contrasta retos operativos con personas que enfrentan fricciones similares al construir en cloud.",
+        "Cupos limitados, por invitación y con espacio real para compartir experiencias, no solo escuchar.",
     },
   ],
   detailsEyebrow: "Información del evento",
-  detailsTitle: "Todo lo esencial, antes de comenzar el día",
+  detailsTitle: "Lo práctico, sin rodeos",
   approvalNotice:
     "La solicitud está sujeta a aprobación. La dirección exacta se compartirá únicamente con las personas aprobadas.",
   registrationEyebrow: "Solicitud de registro",
-  registrationTitle: "Solicita tu cupo",
+  registrationTitle: "Reserva tu lugar en la mesa",
   registrationDescription:
-    "Completa tus datos. Nuestro equipo revisará la solicitud y te confirmará si tu cupo fue aprobado.",
+    "Déjanos tus datos. Revisamos cada solicitud y te confirmamos si hay cupo disponible.",
   form: {
     firstName: "Nombre",
     lastName: "Apellidos",
@@ -83,7 +86,7 @@ export const cloudConfessionsCopy = {
     connectionError: "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
   },
   footerDescription:
-    "Conversaciones reales sobre infraestructura, cloud y AWS, organizadas por C4C7OPS.",
+    "Un desayuno privado de C4C7OPS antes del AWS Summit Bogotá.",
 } as const;
 
 export type CloudConfessionsOrigin = "landing" | "invitation_link";

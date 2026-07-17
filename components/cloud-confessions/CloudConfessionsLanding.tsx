@@ -627,9 +627,11 @@ export default function CloudConfessionsLanding() {
               {cloudConfessionsCopy.aboutDescription}
             </p>
             <div className="rounded-2xl border border-cactus-green/18 bg-cactus-green/7 p-5">
-              <p className="text-sm font-bold text-white/78">Sin escenario. Sin pitch.</p>
+              <p className="text-sm font-bold text-white/78">
+                {cloudConfessionsCopy.formatNoteTitle}
+              </p>
               <p className="mt-2 text-sm leading-6 text-white/48">
-                {cloudConfessionsCopy.conversationNote}
+                {cloudConfessionsCopy.formatNote}
               </p>
             </div>
           </div>
@@ -680,10 +682,10 @@ export default function CloudConfessionsLanding() {
           <div className="overflow-hidden rounded-[2rem] border border-white/9 bg-[#141417]">
             <div className="border-b border-white/8 px-7 py-7 sm:px-9">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
-                Conversaciones sobre la mesa
+                {cloudConfessionsCopy.topicsEyebrow}
               </p>
               <h2 className="mt-4 text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
-                Lo que normalmente no se cuenta
+                {cloudConfessionsCopy.topicsTitle}
               </h2>
             </div>
             <div className="divide-y divide-white/8">
