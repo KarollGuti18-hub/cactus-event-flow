@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const listIds = getCloudConfessionsListIds();
     if (!getBrevoApiKey() || !listIds) {
       return NextResponse.json(
-        { error: "Configuración de Cloud Confessions incompleta" },
+        { error: "Configuración de Cloud Confession incompleta" },
         { status: 500 },
       );
     }
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      console.error("Cloud Confessions incomplete tracking failed", {
+      console.error("Cloud Confession incomplete tracking failed", {
         status: response.status,
       });
       return NextResponse.json(

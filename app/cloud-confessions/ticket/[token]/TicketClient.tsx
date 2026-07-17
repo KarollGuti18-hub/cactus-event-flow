@@ -213,7 +213,7 @@ export default function CloudConfessionsTicketClient({
                   className="cactus-input mb-3"
                   value={staffPin}
                   onChange={(event) => setStaffPin(event.target.value)}
-                  placeholder="PIN de Cloud Confessions"
+                  placeholder="PIN de Cloud Confession"
                   autoComplete="off"
                 />
                 {staffError ? (

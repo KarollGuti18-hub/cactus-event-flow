@@ -13,7 +13,7 @@ export async function GET(_request: Request, context: RouteContext) {
   try {
     if (!isCloudConfessionsGoogleSheetsConfigured()) {
       return NextResponse.json(
-        { error: "Google Sheets de Cloud Confessions no configurado" },
+        { error: "Google Sheets de Cloud Confession no configurado" },
         { status: 500 },
       );
     }

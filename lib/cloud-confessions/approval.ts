@@ -28,17 +28,17 @@ export async function processCloudConfessionsApprovalByEmail(
   status: "approved" | "rejected",
 ): Promise<CloudConfessionsApprovalResult> {
   if (!isCloudConfessionsGoogleSheetsConfigured()) {
-    throw new Error("Google Apps Script de Cloud Confessions no configurado");
+    throw new Error("Google Apps Script de Cloud Confession no configurado");
   }
 
   const listIds = getCloudConfessionsListIds();
   if (!listIds) {
-    throw new Error("Listas de Brevo de Cloud Confessions no configuradas");
+    throw new Error("Listas de Brevo de Cloud Confession no configuradas");
   }
 
   const attendee = await findCloudConfessionsAttendeeByEmail(email);
   if (!attendee) {
-    throw new Error("No se encontró la solicitud de Cloud Confessions");
+    throw new Error("No se encontró la solicitud de Cloud Confession");
   }
 
   if (status === "approved" && attendee.status === "aprobado" && attendee.qrToken) {

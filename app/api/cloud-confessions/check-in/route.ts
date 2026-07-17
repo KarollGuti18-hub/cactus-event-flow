@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     if (!isCloudConfessionsGoogleSheetsConfigured()) {
       return NextResponse.json(
-        { error: "Google Sheets de Cloud Confessions no configurado" },
+        { error: "Google Sheets de Cloud Confession no configurado" },
         { status: 500 },
       );
     }
@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
       if (!response.ok) {
         console.error(
-          "Cloud Confessions Brevo check-in sync failed:",
+          "Cloud Confession Brevo check-in sync failed:",
           await getBrevoErrorMessage(response),
         );
       }

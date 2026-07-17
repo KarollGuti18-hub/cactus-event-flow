@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const listIds = getCloudConfessionsListIds();
     if (!getBrevoApiKey() || !listIds) {
       return NextResponse.json(
-        { error: "Configuración de Cloud Confessions incompleta" },
+        { error: "Configuración de Cloud Confession incompleta" },
         { status: 500 },
       );
     }
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     });
 
     if (!brevoResponse.ok) {
-      console.error("Cloud Confessions registration failed in Brevo", {
+      console.error("Cloud Confession registration failed in Brevo", {
         status: brevoResponse.status,
       });
       return NextResponse.json(
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         sheetsSynced = true;
       } catch (error) {
         sheetsError = "No se pudo sincronizar el registro adicional";
-        console.error("Cloud Confessions Sheets sync failed", {
+        console.error("Cloud Confession Sheets sync failed", {
           errorType: error instanceof Error ? error.name : "UnknownError",
         });
       }

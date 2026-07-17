@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Cloud Confessions approval webhook failed", {
+    console.error("Cloud Confession approval webhook failed", {
       errorType: error instanceof Error ? error.name : "UnknownError",
     });
     return NextResponse.json(

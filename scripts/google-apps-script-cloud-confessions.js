@@ -1,8 +1,8 @@
 /**
- * Google Apps Script — Cloud Confessions Breakfast
+ * Google Apps Script — Cloud Confession Breakfast
  *
  * SETUP:
- * 1. Crear el archivo "Registros - Cloud Confessions Breakfast".
+ * 1. Crear el archivo "Registros - Cloud Confession Breakfast".
  * 2. Extensiones → Apps Script → pegar este archivo.
  * 3. Reemplazar SECRET y WEBHOOK_URL.
  * 4. Autorizar el script con la cuenta organizadora: kasogumo2006@gmail.com
@@ -22,7 +22,7 @@ const CONFIG = {
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-confessions/webhooks/sheets-approval",
   ORGANIZER_EMAIL: "kasogumo2006@gmail.com",
-  EVENT_TITLE: "Cloud Confessions Breakfast",
+  EVENT_TITLE: "Cloud Confession Breakfast",
   EVENT_LOCATION: "Brumo Bistro",
   EVENT_DESCRIPTION:
     "Desayuno privado de C4C7OPS antes del AWS Summit Bogotá. Buena comida, conversaciones reales y networking en un ambiente relajado.",
@@ -151,7 +151,7 @@ function onEdit(e) {
   const statusCode = response.getResponseCode();
   if (statusCode < 200 || statusCode >= 300) {
     throw new Error(
-      "El webhook de Cloud Confessions falló con estado " + statusCode,
+      "El webhook de Cloud Confession falló con estado " + statusCode,
     );
   }
 

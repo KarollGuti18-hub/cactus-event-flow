@@ -1,6 +1,6 @@
 export const cloudConfessionsConfig = {
   slug: "cloud-confessions",
-  name: "Cloud Confessions Breakfast",
+  name: "Cloud Confession Breakfast",
   organizer: "C4C7OPS",
   description:
     "Un desayuno privado antes del AWS Summit Bogotá para empezar el día con buena comida, conversaciones reales y networking en un ambiente relajado.",
@@ -14,7 +14,7 @@ export const cloudConfessionsConfig = {
   calendarTimezone: "America/Bogota",
   ctaLabel: "Solicitar mi cupo",
   confirmationMessage:
-    "Recibimos tu solicitud para Cloud Confessions Breakfast. Nuestro equipo revisará tu registro y te confirmará el cupo próximamente.",
+    "Recibimos tu solicitud para Cloud Confession Breakfast. Nuestro equipo revisará tu registro y te confirmará el cupo próximamente.",
   limitedSpots: true,
   invitationOnly: true,
   sheetName: "Registros",
@@ -39,7 +39,7 @@ export const cloudConfessionsCopy = {
     "No hay presentaciones ni agenda formal: solo desayunar bien, pasar un buen rato y conversar sin formalidades.",
   topicsEyebrow: "De qué se habla",
   topicsTitle: "Conversaciones reales sobre la nube",
-  aboutEyebrow: "Qué es Cloud Confessions",
+  aboutEyebrow: "Qué es Cloud Confession",
   aboutTitle: "Primero desayunamos. Después, el Summit.",
   aboutDescription:
     "Un desayuno privado en Brumo Bistro para líderes y profesionales de infraestructura, cloud, DevOps, SRE y tecnología. Un espacio cercano para conocerse, comer bien y llegar al AWS Summit con nuevas conexiones y mejor energía.",
@@ -79,7 +79,7 @@ export const cloudConfessionsCopy = {
     jobTitle: "Cargo",
     phone: "Número de contacto",
     consent:
-      "Acepto recibir comunicaciones relacionadas con Cloud Confessions Breakfast y con el estado de mi solicitud.",
+      "Acepto recibir comunicaciones relacionadas con Cloud Confession Breakfast y con el estado de mi solicitud.",
     submitting: "Enviando solicitud...",
     submit: "Enviar solicitud",
     genericError: "No pudimos completar la solicitud. Intenta de nuevo.",

@@ -33,7 +33,7 @@ async function callCloudConfessionsAppsScript(
   const secret = process.env.CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET?.trim();
 
   if (!url || !secret) {
-    throw new Error("Google Apps Script de Cloud Confessions no configurado");
+    throw new Error("Google Apps Script de Cloud Confession no configurado");
   }
 
   const response = await fetch(url, {
