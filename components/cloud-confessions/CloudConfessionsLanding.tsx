@@ -324,7 +324,7 @@ export default function CloudConfessionsLanding() {
                 className="object-contain object-top"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07]/95 via-[#020b07]/20 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] from-[0%] via-[#020b07] via-[52%] to-transparent to-[64%]" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
 
