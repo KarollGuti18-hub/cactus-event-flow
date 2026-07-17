@@ -319,7 +319,7 @@ export default function CloudConfessionsLanding() {
               fill
               priority
               sizes="(min-width: 1280px) 768px, (min-width: 1024px) 60vw, 100vw"
-              className="object-cover object-[62%_center] opacity-90 sm:object-center"
+              className="object-contain object-top opacity-90"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] via-[#020b07]/92 to-[#020b07]/10" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/20" />
