@@ -23,9 +23,9 @@ const CONFIG = {
     "https://www.c4c7ops.co/api/cloud-confessions/webhooks/sheets-approval",
   ORGANIZER_EMAIL: "kasogumo2006@gmail.com",
   EVENT_TITLE: "Cloud Confession Breakfast",
-  EVENT_LOCATION: "Brumo Bistro",
+  EVENT_LOCATION: "Brumo Bistro · a pocos pasos del Ágora",
   EVENT_DESCRIPTION:
-    "Desayuno privado de C4C7OPS antes del AWS Summit Bogotá. Buena comida, conversaciones reales y networking en un ambiente relajado.",
+    "Desayuno privado de C4C7OPS antes del AWS Summit Bogotá. Buena comida, conversaciones reales y networking en un ambiente relajado. Ubicación: Brumo Bistro, a pocos pasos del Ágora.",
   EVENT_START: new Date("2026-07-30T07:00:00-05:00"),
   EVENT_END: new Date("2026-07-30T09:00:00-05:00"),
   EVENT_PROPERTY_KEY: "CLOUD_CONFESSIONS_CALENDAR_EVENT_ID",

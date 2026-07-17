@@ -6,7 +6,7 @@ export const cloudConfessionsConfig = {
     "Un desayuno privado antes del AWS Summit Bogotá para empezar el día con buena comida, conversaciones reales y networking en un ambiente relajado.",
   date: "Jueves 30 de julio, 2026",
   time: "7:00 a. m.",
-  publicLocation: "Brumo Bistro",
+  publicLocation: "A pocos pasos del Ágora",
   exactAddress: "Brumo Bistro",
   calendarOrganizerEmail: "kasogumo2006@gmail.com",
   calendarStartIso: "2026-07-30T07:00:00-05:00",
@@ -42,7 +42,7 @@ export const cloudConfessionsCopy = {
   aboutEyebrow: "Qué es Cloud Confession",
   aboutTitle: "Primero desayunamos. Después, el Summit.",
   aboutDescription:
-    "Un desayuno privado en Brumo Bistro para líderes y profesionales de infraestructura, cloud, DevOps, SRE y tecnología. Un espacio cercano para conocerse, comer bien y llegar al AWS Summit con nuevas conexiones y mejor energía.",
+    "Un desayuno privado a pocos pasos del Ágora para líderes y profesionales de infraestructura, cloud, DevOps, SRE y tecnología. Un espacio cercano para conocerse, comer bien y llegar al AWS Summit con nuevas conexiones y mejor energía.",
   benefitsEyebrow: "Por qué asistir",
   benefitsTitle: "Más que un registro: una mañana bien empezada",
   benefits: [
