@@ -321,7 +321,7 @@ export default function CloudConfessionsLanding() {
                 priority
                 quality={90}
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 88vw"
-                className="object-contain object-center"
+                className="object-contain object-top"
               />
             </div>
             <div className="absolute inset-0 bg-gradient-to-r from-[#020b07]/95 via-[#020b07]/20 to-transparent" />
