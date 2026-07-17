@@ -313,14 +313,14 @@ export default function CloudConfessionsLanding() {
       >
         <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:py-8">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-full">
+            <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[96%]">
               <Image
                 src="/cloud-confessions-banner.jpg"
                 alt=""
                 fill
                 priority
                 quality={90}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 100vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 96vw"
                 className="object-contain object-top"
               />
             </div>
@@ -393,10 +393,10 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-20 mb-20 self-start lg:fixed lg:right-8 lg:top-24 lg:mb-0 lg:w-[25rem] lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto 2xl:right-[calc((100vw-80rem)/2+2rem)]"
+          className="section-anchor relative z-10 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-2 lg:row-span-3 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
         >
-          <div className="overflow-hidden rounded-[1.75rem] border border-white/20 bg-black/15 shadow-[0_30px_100px_rgba(0,0,0,0.25)] backdrop-blur-md">
-            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/8 via-transparent to-transparent px-6 py-5">
+          <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/20 bg-[#151518]/95 shadow-[0_30px_100px_rgba(0,0,0,0.5),0_0_0_1px_rgba(127,155,40,0.04)] backdrop-blur-2xl">
+            <div className="border-b border-white/8 bg-gradient-to-br from-cactus-green/14 to-transparent px-6 py-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cactus-green">
