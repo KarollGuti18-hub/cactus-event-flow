@@ -183,9 +183,11 @@ function getSheet() {
 function ensureHeaders(sheet) {
   const needed = CONFIG.HEADERS.length;
   const range = sheet.getRange(1, 1, 1, needed);
-  const current = range.getValues()[0];
+  const current = range.getValues()[0].map(function (value) {
+    return String(value || "").trim();
+  });
   const isEmpty = current.every(function (value) {
-    return String(value || "").trim() === "";
+    return value === "";
   });
 
   if (isEmpty) {
@@ -193,9 +195,44 @@ function ensureHeaders(sheet) {
     return;
   }
 
+  // Migración desde el layout anterior (sin calendar_invited_at).
+  // Antes: ... checkin_at | actualizado_at
+  // Ahora: ... checkin_at | calendar_invited_at | actualizado_at
+  if (
+    current[COL.CHECKED_IN_AT - 1] === "checkin_at" &&
+    current[COL.CALENDAR_INVITED_AT - 1] === "actualizado_at" &&
+    !current[COL.UPDATED_AT - 1]
+  ) {
+    sheet.insertColumnBefore(COL.CALENDAR_INVITED_AT);
+    sheet.getRange(1, COL.CALENDAR_INVITED_AT).setValue("calendar_invited_at");
+    sheet.getRange(1, COL.UPDATED_AT).setValue("actualizado_at");
+    return;
+  }
+
+  // Si calendar_invited_at quedó al final por error, lo reordenamos.
+  if (
+    current[COL.CHECKED_IN_AT - 1] === "checkin_at" &&
+    current[COL.CALENDAR_INVITED_AT - 1] === "actualizado_at" &&
+    current[COL.UPDATED_AT - 1] === "calendar_invited_at"
+  ) {
+    const lastRow = Math.max(sheet.getLastRow(), 1);
+    const updatedAtValues = sheet
+      .getRange(1, COL.CALENDAR_INVITED_AT, lastRow, 1)
+      .getValues();
+    const calendarValues = sheet
+      .getRange(1, COL.UPDATED_AT, lastRow, 1)
+      .getValues();
+
+    sheet.getRange(1, COL.CALENDAR_INVITED_AT, lastRow, 1).setValues(calendarValues);
+    sheet.getRange(1, COL.UPDATED_AT, lastRow, 1).setValues(updatedAtValues);
+    sheet.getRange(1, COL.CALENDAR_INVITED_AT).setValue("calendar_invited_at");
+    sheet.getRange(1, COL.UPDATED_AT).setValue("actualizado_at");
+    return;
+  }
+
   for (let index = 0; index < needed; index += 1) {
     const expected = CONFIG.HEADERS[index];
-    const actual = String(current[index] || "").trim();
+    const actual = current[index] || "";
 
     if (!actual) {
       sheet.getRange(1, index + 1).setValue(expected);
@@ -204,13 +241,14 @@ function ensureHeaders(sheet) {
 
     if (actual !== expected) {
       throw new Error(
-        "Las columnas de la pestaña Registros no coinciden con Cloud Confessions. Esperado '" +
+        "Las columnas de la pestaña Registros no coinciden. Esperado '" +
           expected +
           "' en columna " +
           (index + 1) +
           ", encontrado '" +
           actual +
-          "'.",
+          "'. Orden correcto: " +
+          CONFIG.HEADERS.join(", "),
       );
     }
   }
@@ -280,7 +318,7 @@ function getAllAttendees(sheet) {
   if (lastRow < 2) return [];
 
   const values = sheet
-    .getRange(2, 1, lastRow - 1, CONFIG.HEADERS.length)
+    .getRange(2, 1, lastRow, CONFIG.HEADERS.length)
     .getValues();
 
   return values
@@ -431,13 +469,8 @@ function listNeedingProcessing() {
 }
 
 function getOrganizerCalendar() {
-  const calendars = CalendarApp.getAllOwnedCalendars();
-  for (let index = 0; index < calendars.length; index += 1) {
-    if (normalizeEmail(calendars[index].getName()) === CONFIG.ORGANIZER_EMAIL) {
-      return calendars[index];
-    }
-  }
-
+  // El script debe autorizarse con kasogumo2006@gmail.com.
+  // Usamos el calendario principal de esa cuenta.
   return CalendarApp.getDefaultCalendar();
 }
 

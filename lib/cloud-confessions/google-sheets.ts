@@ -41,14 +41,17 @@ async function callCloudConfessionsAppsScript(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ secret, action, data }),
     redirect: "follow",
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(20_000),
   });
 
   const result = (await response.json().catch(() => ({}))) as
     CloudConfessionsAppsScriptResponse;
 
   if (!response.ok || result.error || result.success === false) {
-    throw new Error(result.error ?? "Error al comunicarse con Google Apps Script");
+    throw new Error(
+      result.error ??
+        `Error al comunicarse con Google Apps Script (${response.status})`,
+    );
   }
 
   return result;

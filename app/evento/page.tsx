@@ -458,15 +458,19 @@ export default function Home() {
 
     if (!isValidEmail(email)) return;
 
-    setFormData((prev) => ({
-      ...prev,
-      email,
-      nombre: firstname || prev.nombre,
-      apellido: lastname || prev.apellido,
-    }));
+    const prefillTimer = window.setTimeout(() => {
+      setFormData((prev) => ({
+        ...prev,
+        email,
+        nombre: firstname || prev.nombre,
+        apellido: lastname || prev.apellido,
+      }));
+    }, 0);
 
     const storageKey = `${VISIT_TRACK_KEY}:${email.toLowerCase()}`;
-    if (sessionStorage.getItem(storageKey)) return;
+    if (sessionStorage.getItem(storageKey)) {
+      return () => window.clearTimeout(prefillTimer);
+    }
 
     fetch("/api/track-visit", {
       method: "POST",
@@ -483,6 +487,8 @@ export default function Home() {
         }
       })
       .catch(() => {});
+
+    return () => window.clearTimeout(prefillTimer);
   }, []);
 
   useEffect(() => {

@@ -175,6 +175,7 @@ export async function POST(request: Request) {
         sheetsError = "No se pudo sincronizar el registro adicional";
         console.error("Cloud Confession Sheets sync failed", {
           errorType: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : "unknown",
         });
       }
     }
