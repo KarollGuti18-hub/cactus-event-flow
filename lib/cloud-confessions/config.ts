@@ -1,7 +1,7 @@
 export const cloudConfessionsConfig = {
   slug: "cloud-confessions",
   name: "Cloud Confessions Breakfast",
-  organizer: "Cactus",
+  organizer: "C4C7OPS",
   description:
     "Un desayuno privado para conversar con honestidad sobre infraestructura, cloud y las decisiones que tomamos construyendo sobre AWS.",
   date: "Pendiente de confirmación",
@@ -83,7 +83,7 @@ export const cloudConfessionsCopy = {
     connectionError: "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
   },
   footerDescription:
-    "Conversaciones reales sobre infraestructura, cloud y AWS, organizadas por Cactus.",
+    "Conversaciones reales sobre infraestructura, cloud y AWS, organizadas por C4C7OPS.",
 } as const;
 
 export type CloudConfessionsOrigin = "landing" | "invitation_link";

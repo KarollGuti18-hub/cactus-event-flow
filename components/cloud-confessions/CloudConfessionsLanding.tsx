@@ -261,7 +261,7 @@ export default function CloudConfessionsLanding() {
           <a href="#inicio" aria-label="Ir al inicio" className="flex items-center">
             <Image
               src="/logo-c4c7ops-white.png"
-              alt="Cactus"
+              alt="C4C7OPS"
               width={168}
               height={44}
               priority
