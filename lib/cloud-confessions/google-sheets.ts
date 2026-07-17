@@ -103,6 +103,7 @@ export async function updateCloudConfessionsAttendeeRow(
     qrToken: string;
     attended: string;
     checkedInAt: string;
+    calendarInvitedAt: string;
     updatedAt: string;
   }>,
 ): Promise<void> {

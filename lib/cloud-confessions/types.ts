@@ -61,5 +61,6 @@ export interface CloudConfessionsAttendeeRecord {
   qrToken: string;
   attended: string;
   checkedInAt: string;
+  calendarInvitedAt: string;
   updatedAt: string;
 }

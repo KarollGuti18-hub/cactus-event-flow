@@ -1,15 +1,18 @@
 /**
  * Google Apps Script — Cloud Confessions Breakfast
  *
- * Este script debe instalarse en un spreadsheet independiente.
- *
  * SETUP:
  * 1. Crear el archivo "Registros - Cloud Confessions Breakfast".
  * 2. Extensiones → Apps Script → pegar este archivo.
  * 3. Reemplazar SECRET y WEBHOOK_URL.
- * 4. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
- * 5. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
- * 6. Crear un activador instalable para onEdit (Al editar).
+ * 4. Autorizar el script con la cuenta organizadora: kasogumo2006@gmail.com
+ * 5. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
+ * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
+ * 7. Crear un activador instalable para onEdit (Al editar).
+ * 8. Ejecutar una vez ensureCalendarEvent() para crear el evento maestro.
+ *
+ * Al aprobar: genera QR vía webhook e invita al calendario de Google.
+ * Al rechazar: actualiza Brevo/Sheets y retira la invitación del calendario.
  */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -18,6 +21,14 @@ const CONFIG = {
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-confessions/webhooks/sheets-approval",
+  ORGANIZER_EMAIL: "kasogumo2006@gmail.com",
+  EVENT_TITLE: "Cloud Confessions Breakfast",
+  EVENT_LOCATION: "Brumo Bistro",
+  EVENT_DESCRIPTION:
+    "Desayuno privado de C4C7OPS antes del AWS Summit Bogotá. Buena comida, conversaciones reales y networking en un ambiente relajado.",
+  EVENT_START: new Date("2026-07-30T07:00:00-05:00"),
+  EVENT_END: new Date("2026-07-30T09:00:00-05:00"),
+  EVENT_PROPERTY_KEY: "CLOUD_CONFESSIONS_CALENDAR_EVENT_ID",
   HEADERS: [
     "id",
     "email",
@@ -34,6 +45,7 @@ const CONFIG = {
     "qr_token",
     "asistio",
     "checkin_at",
+    "calendar_invited_at",
     "actualizado_at",
   ],
 };
@@ -54,7 +66,8 @@ const COL = {
   QR_TOKEN: 13,
   ATTENDED: 14,
   CHECKED_IN_AT: 15,
-  UPDATED_AT: 16,
+  CALENDAR_INVITED_AT: 16,
+  UPDATED_AT: 17,
 };
 
 function doPost(e) {
@@ -91,6 +104,11 @@ function doPost(e) {
           success: true,
           attendees: listNeedingProcessing(),
         });
+      case "ensureCalendarEvent":
+        return jsonResponse({
+          success: true,
+          eventId: ensureCalendarEvent().getId(),
+        });
       default:
         return jsonResponse({ success: false, error: "Acción no válida" });
     }
@@ -110,11 +128,12 @@ function onEdit(e) {
   if (sheet.getName() !== CONFIG.SHEET_NAME) return;
   if (e.range.getColumn() !== COL.STATUS || e.range.getRow() === 1) return;
 
+  const rowNumber = e.range.getRow();
   const status = parseStatus(e.value);
   if (status !== "aprobado" && status !== "rechazado") return;
 
   const email = normalizeEmail(
-    sheet.getRange(e.range.getRow(), COL.EMAIL).getValue(),
+    sheet.getRange(rowNumber, COL.EMAIL).getValue(),
   );
   if (!email) return;
 
@@ -135,6 +154,18 @@ function onEdit(e) {
       "El webhook de Cloud Confessions falló con estado " + statusCode,
     );
   }
+
+  const now = new Date().toISOString();
+
+  if (status === "aprobado") {
+    inviteGuestToCalendar(email);
+    sheet.getRange(rowNumber, COL.CALENDAR_INVITED_AT).setValue(now);
+  } else {
+    removeGuestFromCalendar(email);
+    sheet.getRange(rowNumber, COL.CALENDAR_INVITED_AT).setValue("");
+  }
+
+  sheet.getRange(rowNumber, COL.UPDATED_AT).setValue(now);
 }
 
 function getSheet() {
@@ -150,7 +181,8 @@ function getSheet() {
 }
 
 function ensureHeaders(sheet) {
-  const range = sheet.getRange(1, 1, 1, CONFIG.HEADERS.length);
+  const needed = CONFIG.HEADERS.length;
+  const range = sheet.getRange(1, 1, 1, needed);
   const current = range.getValues()[0];
   const isEmpty = current.every(function (value) {
     return String(value || "").trim() === "";
@@ -161,14 +193,26 @@ function ensureHeaders(sheet) {
     return;
   }
 
-  const matches = CONFIG.HEADERS.every(function (header, index) {
-    return String(current[index] || "").trim() === header;
-  });
+  for (let index = 0; index < needed; index += 1) {
+    const expected = CONFIG.HEADERS[index];
+    const actual = String(current[index] || "").trim();
 
-  if (!matches) {
-    throw new Error(
-      "Las columnas de la pestaña Registros no coinciden con Cloud Confessions",
-    );
+    if (!actual) {
+      sheet.getRange(1, index + 1).setValue(expected);
+      continue;
+    }
+
+    if (actual !== expected) {
+      throw new Error(
+        "Las columnas de la pestaña Registros no coinciden con Cloud Confessions. Esperado '" +
+          expected +
+          "' en columna " +
+          (index + 1) +
+          ", encontrado '" +
+          actual +
+          "'.",
+      );
+    }
   }
 }
 
@@ -226,6 +270,7 @@ function rowToAttendee(rowNumber, values) {
     qrToken: String(values[COL.QR_TOKEN - 1] || ""),
     attended: String(values[COL.ATTENDED - 1] || ""),
     checkedInAt: String(values[COL.CHECKED_IN_AT - 1] || ""),
+    calendarInvitedAt: String(values[COL.CALENDAR_INVITED_AT - 1] || ""),
     updatedAt: String(values[COL.UPDATED_AT - 1] || ""),
   };
 }
@@ -295,6 +340,7 @@ function upsertRegistration(data) {
       existing ? existing.qrToken : "",
       existing ? existing.attended : "",
       existing ? existing.checkedInAt : "",
+      existing ? existing.calendarInvitedAt : "",
       now,
     ];
 
@@ -364,6 +410,9 @@ function updateRow(rowNumber, updates) {
   if (updates.checkedInAt !== undefined) {
     values[COL.CHECKED_IN_AT - 1] = String(updates.checkedInAt || "");
   }
+  if (updates.calendarInvitedAt !== undefined) {
+    values[COL.CALENDAR_INVITED_AT - 1] = String(updates.calendarInvitedAt || "");
+  }
   if (updates.updatedAt !== undefined) {
     values[COL.UPDATED_AT - 1] = String(updates.updatedAt || "");
   }
@@ -373,8 +422,97 @@ function updateRow(rowNumber, updates) {
 
 function listNeedingProcessing() {
   return getAllAttendees(getSheet()).filter(function (attendee) {
-    return attendee.status === "aprobado" && !attendee.approvedAt;
+    return attendee.status === "aprobado" && !attendee.qrToken;
   });
+}
+
+function getOrganizerCalendar() {
+  const calendars = CalendarApp.getAllOwnedCalendars();
+  for (let index = 0; index < calendars.length; index += 1) {
+    if (normalizeEmail(calendars[index].getName()) === CONFIG.ORGANIZER_EMAIL) {
+      return calendars[index];
+    }
+  }
+
+  return CalendarApp.getDefaultCalendar();
+}
+
+function ensureCalendarEvent() {
+  const properties = PropertiesService.getScriptProperties();
+  const existingId = properties.getProperty(CONFIG.EVENT_PROPERTY_KEY);
+  const calendar = getOrganizerCalendar();
+
+  if (existingId) {
+    try {
+      const existing = calendar.getEventById(existingId);
+      if (existing) {
+        existing.setTitle(CONFIG.EVENT_TITLE);
+        existing.setLocation(CONFIG.EVENT_LOCATION);
+        existing.setDescription(CONFIG.EVENT_DESCRIPTION);
+        existing.setTime(CONFIG.EVENT_START, CONFIG.EVENT_END);
+        existing.setGuestsCanSeeGuests(false);
+        existing.setGuestsCanInviteOthers(false);
+        existing.setGuestsCanModify(false);
+        return existing;
+      }
+    } catch (error) {
+      // El evento guardado ya no existe; se crea uno nuevo.
+    }
+  }
+
+  const event = calendar.createEvent(
+    CONFIG.EVENT_TITLE,
+    CONFIG.EVENT_START,
+    CONFIG.EVENT_END,
+    {
+      location: CONFIG.EVENT_LOCATION,
+      description: CONFIG.EVENT_DESCRIPTION,
+      sendInvites: false,
+    },
+  );
+
+  event.setGuestsCanSeeGuests(false);
+  event.setGuestsCanInviteOthers(false);
+  event.setGuestsCanModify(false);
+  properties.setProperty(CONFIG.EVENT_PROPERTY_KEY, event.getId());
+  return event;
+}
+
+function inviteGuestToCalendar(email) {
+  const event = ensureCalendarEvent();
+  const guests = event.getGuestList(true);
+  const alreadyInvited = guests.some(function (guest) {
+    return normalizeEmail(guest.getEmail()) === normalizeEmail(email);
+  });
+
+  if (alreadyInvited) return;
+
+  event.addGuest(email);
+}
+
+function removeGuestFromCalendar(email) {
+  const properties = PropertiesService.getScriptProperties();
+  const existingId = properties.getProperty(CONFIG.EVENT_PROPERTY_KEY);
+  if (!existingId) return;
+
+  const calendar = getOrganizerCalendar();
+  let event;
+
+  try {
+    event = calendar.getEventById(existingId);
+  } catch (error) {
+    return;
+  }
+
+  if (!event) return;
+
+  const guests = event.getGuestList(true);
+  const match = guests.find(function (guest) {
+    return normalizeEmail(guest.getEmail()) === normalizeEmail(email);
+  });
+
+  if (!match) return;
+  event.removeGuest(email);
 }
 
 function jsonResponse(payload) {
