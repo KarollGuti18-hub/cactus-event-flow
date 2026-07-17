@@ -311,7 +311,7 @@ export default function CloudConfessionsLanding() {
         id="inicio"
         className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:py-8">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-start-1 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:py-8">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-full">
               <Image
@@ -328,8 +328,8 @@ export default function CloudConfessionsLanding() {
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
 
-          <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
-            <div className="max-w-3xl lg:max-w-[calc(100%-27rem)]">
+          <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8 lg:mx-0 lg:max-w-none">
+            <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-cactus-green">
                 <span className="h-1.5 w-1.5 rounded-full bg-cactus-green" />
                 {cloudConfessionsCopy.invitationBadge}
@@ -371,7 +371,7 @@ export default function CloudConfessionsLanding() {
               <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
                 <a
                   href="#registro"
-                  className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
+                  className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light lg:hidden"
                 >
                   {cloudConfessionsConfig.ctaLabel}
                   <span aria-hidden="true">→</span>
@@ -393,10 +393,10 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-20 mb-20 self-start lg:absolute lg:right-8 lg:top-20 lg:mb-0 lg:w-[25rem] lg:max-h-[calc(100svh-5rem)] lg:overflow-y-auto"
+          className="section-anchor relative z-20 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:row-span-4 lg:mb-0 lg:max-h-[calc(100svh-7rem)] lg:overflow-y-auto"
         >
-          <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/25 bg-black/70 shadow-[0_30px_100px_rgba(0,0,0,0.55),0_0_0_1px_rgba(127,155,40,0.08)] backdrop-blur-3xl">
-            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/18 via-black/20 to-transparent px-6 py-5">
+          <div className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-black/35 shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-2xl">
+            <div className="border-b border-white/10 bg-gradient-to-br from-cactus-green/12 via-transparent to-transparent px-6 py-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-cactus-green">
