@@ -22,7 +22,7 @@ export function buildSolicitudRecibidaHtml(firstName: string): string {
   <title>Recibimos tu solicitud para Cloud &amp; Coffee</title>
 </head>
 <body style="margin:0;background:#f4f4f5;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Estamos revisando tu cupo para el 30 de julio.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Estamos revisando tu cupo para Cloud & Coffee el 30 de julio.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;">
     <tr><td align="center" style="padding:32px 16px;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#151518;border-radius:24px;">
@@ -61,7 +61,7 @@ export async function sendSolicitudRecibidaEmail(input: {
   const response = await sendTransactionalEmail({
     sender,
     to: [{ email: input.email, name: input.firstName }],
-    subject: "Recibimos tu solicitud para Cloud & Coffee",
+    subject: "Listo: recibimos tu solicitud",
     htmlContent: buildSolicitudRecibidaHtml(input.firstName),
   });
 

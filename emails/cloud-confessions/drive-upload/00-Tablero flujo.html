@@ -19,6 +19,8 @@
       --insist-line: #fdba74;
       --ok-bg: #f7fee7;
       --ok-line: #d9f99d;
+      --bench-bg: #f0f9ff;
+      --bench-line: #bae6fd;
     }
     * { box-sizing: border-box; }
     body {
@@ -38,11 +40,32 @@
       letter-spacing: -0.3px;
     }
     header p {
-      margin: 0;
+      margin: 0 0 8px;
       color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
-      max-width: 720px;
+      max-width: 780px;
+    }
+    header .pitch {
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+      max-width: 780px;
+    }
+    .facts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .facts span {
+      display: inline-block;
+      padding: 7px 11px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--ink);
     }
     .landing {
       display: inline-block;
@@ -54,6 +77,37 @@
       border-radius: 8px;
       font-size: 13px;
       font-weight: 600;
+    }
+    .benchmark {
+      max-width: 1200px;
+      margin: 16px auto 0;
+      padding: 0 24px;
+    }
+    .benchmark-inner {
+      background: var(--bench-bg);
+      border: 1px solid var(--bench-line);
+      border-radius: 14px;
+      padding: 16px 18px;
+    }
+    .benchmark-inner h2 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: #0369a1;
+    }
+    .benchmark-inner p {
+      margin: 0 0 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #0c4a6e;
+    }
+    .benchmark-inner ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #0c4a6e;
     }
     .paths {
       max-width: 1200px;
@@ -84,7 +138,7 @@
       padding-bottom: 4px;
     }
     .card {
-      flex: 0 0 210px;
+      flex: 0 0 240px;
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: 10px;
@@ -109,19 +163,36 @@
       border-color: var(--dark);
       color: #fff;
     }
-    .card.dark .meta { color: #a1a1aa; }
+    .card.dark .meta,
+    .card.dark .label { color: #a1a1aa; }
     .card.dark a { color: #c4e05a; }
     .card .name {
       font-size: 14px;
       font-weight: 700;
-      margin: 0 0 6px;
+      margin: 0 0 8px;
+    }
+    .card .label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--muted);
+      margin: 0 0 3px;
     }
     .card .subject {
       font-size: 12px;
+      font-weight: 600;
       margin: 0 0 8px;
       line-height: 1.35;
+    }
+    .card .preview {
+      font-size: 12px;
+      margin: 0 0 8px;
+      line-height: 1.35;
+      color: #3f3f46;
       flex: 1;
     }
+    .card.dark .preview { color: #d4d4d8; }
     .card .meta {
       font-size: 11px;
       color: var(--muted);
@@ -150,133 +221,189 @@
       padding: 0 24px 32px;
       color: var(--muted);
       font-size: 12px;
+      line-height: 1.5;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Cloud & Coffee · Flujo</h1>
-    <p>Cloud & Coffee · Coffee · Conversations · Cloud. Si falla, insiste con Follow-up 2.</p>
+    <p class="pitch">Tómate un café con C4c7Ops, desayuna y llega con toda la energía al Summit.</p>
+    <p>Coffee · Conversations · Cloud · Hosted by C4c7Ops. Sin “llega cuando quieras” ni “sin agenda”.</p>
+    <div class="facts">
+      <span>Jueves 30 de julio, 2026</span>
+      <span>7:00 – 9:00 a. m.</span>
+      <span>Cerca al Ágora</span>
+      <span>Dirección exacta solo si es aprobado</span>
+      <span>Remitente: mail@news.c4c7ops.co</span>
+    </div>
     <a class="landing" href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir landing →</a>
   </header>
 
+  <section class="benchmark">
+    <div class="benchmark-inner">
+      <h2>Benchmark rápido · asuntos + preview</h2>
+      <p>Patrones que usan bien Stripe Sessions, Airbnb Experiences, Notion/Linear (tono claro), Cvent y equipos de eventos B2B:</p>
+      <ul>
+        <li><strong>Asunto:</strong> personal (“{{NOMBRE}}”), evento claro, fecha o beneficio. ~35–55 caracteres. Evitar ALL CAPS, “URGENTE” y emojis de más.</li>
+        <li><strong>Preview:</strong> no repetir el asunto; sumar detalle (hora, lugar, valor). Complementa lo que Gmail/Apple muestran al lado.</li>
+        <li><strong>Invitación:</strong> “You’re invited / Estás invitado” + nombre del evento + fecha.</li>
+        <li><strong>Follow-ups:</strong> pregunta corta o FOMO suave + cupo/fecha.</li>
+        <li><strong>Confirmación / ticket:</strong> claridad total (“tu cupo / tu QR”) — menos creativo, más útil.</li>
+        <li><strong>Recordatorios:</strong> día concreto + CTA implícito (QR / llegar).</li>
+      </ul>
+    </div>
+  </section>
+
   <div class="paths">
-    <!-- Camino 1: no abre correos -->
     <section class="path">
       <h2>Camino 1 · No abre los correos</h2>
       <div class="row">
         <article class="card">
           <p class="name">Invitación</p>
-          <p class="subject">Cloud & Coffee · tómate un café con nosotros</p>
-          <p class="meta">Lista 11 · inmediato</p>
+          <p class="label">Asunto</p>
+          <p class="subject">{{ contact.NOMBRE }}, estás invitado a Cloud & Coffee</p>
+          <p class="label">Preview</p>
+          <p class="preview">Café y desayuno con C4c7Ops · 30 jul · 7:00–9:00 a. m. · cerca al Ágora.</p>
+          <p class="meta">Lista 11 · inmediato · patrón “You’re invited + fecha”</p>
           <a href="./Invitación.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card fail">
           <p class="name">Follow-up 1</p>
-          <p class="subject">¿Te tomas un café con nosotros el 30?</p>
-          <p class="meta">No abrió · +2 días</p>
+          <p class="label">Asunto</p>
+          <p class="subject">¿Café el 30? Todavía hay cupo</p>
+          <p class="label">Preview</p>
+          <p class="preview">Cloud & Coffee con C4c7Ops · desayuna y llega con energía al Summit.</p>
+          <p class="meta">No abrió · +2 días · pregunta + escasez suave</p>
           <a href="./Follow-up 1.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card insist">
           <p class="name">Follow-up 2</p>
-          <p class="subject">Último aviso: Cloud & Coffee</p>
-          <p class="meta">Sigue sin abrir · insistencia final</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Último aviso: Cloud & Coffee el 30</p>
+          <p class="label">Preview</p>
+          <p class="preview">Cupos limitados · café, desayuno y toda la energía para el Summit.</p>
+          <p class="meta">Insistencia final · last call + beneficio</p>
           <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
         </article>
       </div>
     </section>
 
-    <!-- Camino 2: abre landing, no hace nada -->
     <section class="path">
       <h2>Camino 2 · Abre la landing y no hace nada más</h2>
       <div class="row">
         <article class="card dark">
           <p class="name">Landing</p>
           <p class="subject">Entra a la página</p>
-          <p class="meta">No envía el form</p>
+          <p class="preview">No envía el form</p>
+          <p class="meta">Trigger visitó</p>
           <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
         </article>
         <div class="arrow">→</div>
         <article class="card fail">
           <p class="name">Visitó la landing</p>
-          <p class="subject">¿Terminamos tu solicitud para Cloud & Coffee?</p>
-          <p class="meta">Lista 12 · +1 hora</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Te faltó un paso para Cloud & Coffee</p>
+          <p class="label">Preview</p>
+          <p class="preview">Entraste a la página · completa tu solicitud en un minuto.</p>
+          <p class="meta">Lista 12 · +1 hora · abandono recuperable</p>
           <a href="./Visitó la landing.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card insist">
           <p class="name">Follow-up 2</p>
-          <p class="subject">Último aviso: Cloud & Coffee</p>
-          <p class="meta">Sigue sin registrar · insistencia final</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Último aviso: Cloud & Coffee el 30</p>
+          <p class="label">Preview</p>
+          <p class="preview">Cupos limitados · café, desayuno y toda la energía para el Summit.</p>
+          <p class="meta">Sigue sin registrar</p>
           <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
         </article>
       </div>
     </section>
 
-    <!-- Camino 3: form incompleto -->
     <section class="path">
       <h2>Camino 3 · Empieza el form y lo deja a medias</h2>
       <div class="row">
         <article class="card dark">
           <p class="name">Landing / form</p>
           <p class="subject">Empieza a llenar</p>
-          <p class="meta">No termina</p>
+          <p class="preview">No termina</p>
+          <p class="meta">Incompleto</p>
           <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
         </article>
         <div class="arrow">→</div>
         <article class="card fail">
           <p class="name">Registro incompleto</p>
-          <p class="subject">Te faltó un paso para Cloud & Coffee</p>
-          <p class="meta">Lista 13 · +30–60 min</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Tu solicitud de Cloud & Coffee quedó a medias</p>
+          <p class="label">Preview</p>
+          <p class="preview">30 jul · 7:00–9:00 a. m. · cerca al Ágora. Termínala aquí.</p>
+          <p class="meta">Lista 13 · +30–60 min · estado + fecha en preview</p>
           <a href="./Registro incompleto.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card insist">
           <p class="name">Follow-up 2</p>
-          <p class="subject">Último aviso: Cloud & Coffee</p>
-          <p class="meta">Sigue incompleto · insistencia final</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Último aviso: Cloud & Coffee el 30</p>
+          <p class="label">Preview</p>
+          <p class="preview">Cupos limitados · café, desayuno y toda la energía para el Summit.</p>
+          <p class="meta">Sigue incompleto</p>
           <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
         </article>
       </div>
     </section>
 
-    <!-- Camino 4: éxito -->
     <section class="path">
       <h2>Camino 4 · Completa la solicitud y es aprobado</h2>
       <div class="row">
         <article class="card dark">
           <p class="name">Landing</p>
           <p class="subject">Envía el formulario</p>
-          <p class="meta">Registro completo</p>
+          <p class="preview">Registro completo</p>
+          <p class="meta">Success path</p>
           <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
         </article>
         <div class="arrow">→</div>
         <article class="card ok">
           <p class="name">Solicitud recibida</p>
-          <p class="subject">Recibimos tu solicitud para Cloud & Coffee</p>
-          <p class="meta">Lista 14 · inmediato</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Listo: recibimos tu solicitud</p>
+          <p class="label">Preview</p>
+          <p class="preview">Estamos revisando tu cupo para Cloud & Coffee el 30 de julio.</p>
+          <p class="meta">Lista 14 · claridad tipo confirmación Stripe</p>
           <a href="./Solicitud recibida.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card ok">
           <p class="name">Aprobado + QR</p>
-          <p class="subject">Tu cupo fue aprobado · Cloud & Coffee</p>
-          <p class="meta">Lista 15 · QR + ticket</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Tu cupo está listo · aquí va tu QR</p>
+          <p class="label">Preview</p>
+          <p class="preview">Antes, un café · 30 jul · 7:00–9:00 a. m. Guarda esta entrada.</p>
+          <p class="meta">Lista 15 · utilidad > creatividad</p>
           <a href="./Aprobado + QR (ticket).html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card">
           <p class="name">Recordatorio · 2 días</p>
+          <p class="label">Asunto</p>
           <p class="subject">Te esperamos el jueves · Cloud & Coffee</p>
+          <p class="label">Preview</p>
+          <p class="preview">30 jul · Antes, un café · ten tu QR a la mano.</p>
           <p class="meta">28 jul</p>
           <a href="./Recordatorio · 2 días antes.html" target="_blank">Ver HTML</a>
         </article>
         <div class="arrow">→</div>
         <article class="card">
           <p class="name">Recordatorio · mañana</p>
-          <p class="subject">Mañana nos vemos en Cloud & Coffee</p>
+          <p class="label">Asunto</p>
+          <p class="subject">Mañana es Cloud & Coffee</p>
+          <p class="label">Preview</p>
+          <p class="preview">7:00–9:00 a. m. · Antes, un café · llega con tu QR.</p>
           <p class="meta">29 jul · 5:00 p. m.</p>
           <a href="./Recordatorio · mañana.html" target="_blank">Ver HTML</a>
         </article>
@@ -284,6 +411,9 @@
     </section>
   </div>
 
-  <footer>Cloud & Coffee · C4c7Ops · revisión interna</footer>
+  <footer>
+    Cloud & Coffee · C4c7Ops · revisión interna<br>
+    Asuntos/previews alineados a patrones de invitaciones de eventos (personalización, fecha, beneficio, claridad en ticket).
+  </footer>
 </body>
 </html>

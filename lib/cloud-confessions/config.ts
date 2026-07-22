@@ -5,7 +5,7 @@ export const cloudConfessionsConfig = {
   hostedBy: "Hosted by C4c7Ops",
   organizer: "C4c7Ops",
   description:
-    "Un café informal antes del AWS Summit Bogotá. Conversaciones sin formalidades, de 7:00 a. m. a 9:00 a. m., cerca del Ágora. Llega cuando te quede bien dentro de esa franja.",
+    "Tómate un café con C4c7Ops, desayuna y llega con toda la energía al AWS Summit Bogotá. Jueves 30 de julio, de 7:00 a. m. a 9:00 a. m., cerca del Ágora.",
   date: "Jueves 30 de julio, 2026",
   time: "7:00 – 9:00 a. m.",
   publicLocation: "Cerca al Ágora",
@@ -32,7 +32,7 @@ export const cloudConfessionsCopy = {
   invitationBadge: "Antes del Summit · Por invitación",
   summitContext: "Antes del AWS Summit Bogotá",
   heroLead:
-    "Tómate un café con nosotros. Conversaciones ligeras, sin agenda formal. De 7:00 a. m. a 9:00 a. m.; llega cuando te quede bien.",
+    "Tómate un café con C4c7Ops, desayuna y llega con toda la energía al Summit. Jueves 30 de julio, de 7:00 a. m. a 9:00 a. m., cerca al Ágora.",
   conversationTopics: [
     "Lo que funciona cuando trabajas con AWS",
     "Lo que cuesta más de lo esperado",
@@ -40,27 +40,27 @@ export const cloudConfessionsCopy = {
     "Historias de café, no de slides",
   ],
   audienceTags: ["Infraestructura", "Cloud", "DevOps", "SRE", "Plataforma", "AWS"],
-  formatNoteTitle: "Sin presentaciones",
+  formatNoteTitle: "Café y desayuno",
   formatNote:
-    "No hay agenda formal ni charlas: solo café, conversación y un rato relajado antes del Summit.",
+    "Una mañana para tomarte un café con C4c7Ops, desayunar y conectar con gente de cloud antes de entrar al Summit con toda la energía.",
   topicsEyebrow: "De qué se habla",
   topicsTitle: "Conversaciones reales, con café de por medio",
   aboutEyebrow: "Qué es Cloud & Coffee",
   aboutTitle: "Primero el café. Después, el Summit.",
   aboutDescription:
-    "Un espacio informal cerca del Ágora, de 7:00 a. m. a 9:00 a. m.: tómate un café con C4c7Ops y conecta con gente de cloud, DevOps, SRE e infraestructura antes del AWS Summit. Llega cuando te acomode dentro de esa franja.",
+    "Tómate un café con C4c7Ops, desayuna y llega con toda la energía al AWS Summit. Nos vemos el jueves 30 de julio, de 7:00 a. m. a 9:00 a. m., cerca al Ágora, con gente de cloud, DevOps, SRE e infraestructura.",
   benefitsEyebrow: "Por qué ir",
-  benefitsTitle: "Una mañana más fácil antes del Summit",
+  benefitsTitle: "Una mañana con energía antes del Summit",
   benefits: [
     {
-      title: "Café con calma",
+      title: "Café y desayuno",
       description:
-        "Empieza el día sin prisa: un café bueno y un rato para respirar antes de la jornada intensa.",
+        "Empieza el día bien: café, desayuno y un rato para conectar antes de la jornada intensa.",
     },
     {
       title: "Conversaciones reales",
       description:
-        "Habla de lo que funciona, lo que cuesta y lo que has aprendido — sin micrófonos ni slides.",
+        "Habla de lo que funciona, lo que cuesta y lo que has aprendido operando en la nube.",
     },
     {
       title: "Gente de cloud",

@@ -25,7 +25,7 @@ const CONFIG = {
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
   EVENT_DESCRIPTION:
-    "Cloud & Coffee · Coffee · Conversations · Cloud · Hosted by C4c7Ops. Antes del AWS Summit Bogotá, de 7:00 a. m. a 9:00 a. m. Llega cuando te quede bien Ubicación: Antes, un café · Cl. 24d #40-34, Bogotá (cerca al Ágora).",
+    "Cloud & Coffee · Coffee · Conversations · Cloud · Hosted by C4c7Ops. Tómate un café con C4c7Ops, desayuna y llega con toda la energía al AWS Summit Bogotá. Jueves 30 de julio, de 7:00 a. m. a 9:00 a. m. Ubicación: Antes, un café · Cl. 24d #40-34, Bogotá (cerca al Ágora).",
   EVENT_START: new Date("2026-07-30T07:00:00-05:00"),
   EVENT_END: new Date("2026-07-30T09:00:00-05:00"),
   EVENT_PROPERTY_KEY: "CLOUD_CONFESSIONS_CALENDAR_EVENT_ID",
