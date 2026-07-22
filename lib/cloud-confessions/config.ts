@@ -5,9 +5,9 @@ export const cloudConfessionsConfig = {
   hostedBy: "Hosted by C4c7Ops",
   organizer: "C4c7Ops",
   description:
-    "Pásate antes del AWS Summit Bogotá, tómate un café con nosotros y conversa sin formalidades. Entre 7:00 a. m. y 9:00 a. m., cerca del Ágora.",
+    "Un café informal antes del AWS Summit Bogotá. Conversaciones sin formalidades, de 7:00 a. m. a 9:00 a. m., cerca del Ágora. Llega cuando te quede bien dentro de esa franja.",
   date: "Jueves 30 de julio, 2026",
-  time: "7:00 a. m. – 9:00 a. m.",
+  time: "7:00 – 9:00 a. m.",
   publicLocation: "Cerca al Ágora",
   exactAddress: "Antes, un café · Cl. 24d #40-34, Bogotá",
   calendarOrganizerEmail: "mail@news.c4c7ops.co",
@@ -30,9 +30,9 @@ export const cloudConfessionsConfig = {
 
 export const cloudConfessionsCopy = {
   invitationBadge: "Antes del Summit · Por invitación",
-  summitContext: "Pasa antes del AWS Summit Bogotá",
+  summitContext: "Antes del AWS Summit Bogotá",
   heroLead:
-    "Tómate un café con nosotros. Conversaciones ligeras, sin agenda formal, entre 7:00 a. m. y 9:00 a. m.",
+    "Tómate un café con nosotros. Conversaciones ligeras, sin agenda formal. De 7:00 a. m. a 9:00 a. m.; llega cuando te quede bien.",
   conversationTopics: [
     "Lo que funciona cuando trabajas con AWS",
     "Lo que cuesta más de lo esperado",
@@ -48,8 +48,8 @@ export const cloudConfessionsCopy = {
   aboutEyebrow: "Qué es Cloud & Coffee",
   aboutTitle: "Primero el café. Después, el Summit.",
   aboutDescription:
-    "Un espacio informal cerca del Ágora para pasar entre 7:00 a. m. y 9:00 a. m., tomarte un café con C4c7Ops y conectar con gente de cloud, DevOps, SRE e infraestructura antes de entrar al AWS Summit.",
-  benefitsEyebrow: "Por qué pasar",
+    "Un espacio informal cerca del Ágora, de 7:00 a. m. a 9:00 a. m.: tómate un café con C4c7Ops y conecta con gente de cloud, DevOps, SRE e infraestructura antes del AWS Summit. Llega cuando te acomode dentro de esa franja.",
+  benefitsEyebrow: "Por qué ir",
   benefitsTitle: "Una mañana más fácil antes del Summit",
   benefits: [
     {

@@ -253,7 +253,7 @@ export default function CloudConfessionsLanding() {
 
   const eventFacts = [
     {
-      label: "Hora",
+      label: "Horario",
       value: cloudConfessionsConfig.time,
       icon: "time" as const,
     },
@@ -311,7 +311,7 @@ export default function CloudConfessionsLanding() {
         id="inicio"
         className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-center overflow-hidden bg-[#020b07] py-12 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:py-8">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-12 pt-10 sm:pt-14 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:justify-center lg:pb-8 lg:pt-16">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[96%]">
               <Image
@@ -335,7 +335,7 @@ export default function CloudConfessionsLanding() {
                 {cloudConfessionsCopy.invitationBadge}
               </div>
 
-              <p className="mt-10 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
+              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
                 {cloudConfessionsCopy.summitContext}
               </p>
               <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
