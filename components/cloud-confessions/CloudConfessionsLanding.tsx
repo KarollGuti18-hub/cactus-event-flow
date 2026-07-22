@@ -309,9 +309,9 @@ export default function CloudConfessionsLanding() {
 
       <main
         id="inicio"
-        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 xl:gap-x-16"
+        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-28 sm:px-8 sm:pt-32 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-16 pt-10 sm:pt-14 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:justify-center lg:pb-20 lg:pt-16">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-16 pt-6 sm:pt-8 lg:col-span-2 lg:row-start-1 lg:min-h-[calc(100svh-5rem)] lg:pb-20 lg:pt-10">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[96%]">
               <Image
