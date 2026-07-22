@@ -37,7 +37,7 @@ export default function CloudConfessionsTicketClient({
     async function loadTicket() {
       try {
         const response = await fetch(
-          `/api/cloud-confessions/ticket/${encodeURIComponent(token)}`,
+          `/api/cloud-and-coffee/ticket/${encodeURIComponent(token)}`,
         );
         const data = (await response.json()) as {
           error?: string;
@@ -74,7 +74,7 @@ export default function CloudConfessionsTicketClient({
     setIsCheckingIn(true);
 
     try {
-      const response = await fetch("/api/cloud-confessions/check-in", {
+      const response = await fetch("/api/cloud-and-coffee/check-in", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, staffPin }),
@@ -164,7 +164,7 @@ export default function CloudConfessionsTicketClient({
         {status === "complete" ? (
           <div className="mx-auto mt-7 w-fit rounded-2xl bg-white p-3">
             <Image
-              src={`/api/cloud-confessions/qr/${encodeURIComponent(token)}`}
+              src={`/api/cloud-and-coffee/qr/${encodeURIComponent(token)}`}
               alt={`Código QR de entrada para ${cloudConfessionsConfig.name}`}
               width={240}
               height={240}
@@ -213,7 +213,7 @@ export default function CloudConfessionsTicketClient({
                   className="cactus-input mb-3"
                   value={staffPin}
                   onChange={(event) => setStaffPin(event.target.value)}
-                  placeholder="PIN de Cloud Confession"
+                  placeholder="PIN de Cloud & Coffee"
                   autoComplete="off"
                 />
                 {staffError ? (

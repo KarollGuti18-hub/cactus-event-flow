@@ -8,5 +8,5 @@ export default async function CloudConfessionsCheckInPage({
   params,
 }: CloudConfessionsCheckInPageProps) {
   const { token } = await params;
-  redirect(`/cloud-confessions/ticket/${token}`);
+  redirect(`/cloud-and-coffee/ticket/${token}`);
 }

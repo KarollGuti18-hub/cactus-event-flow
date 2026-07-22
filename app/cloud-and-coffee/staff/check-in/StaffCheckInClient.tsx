@@ -33,14 +33,14 @@ export default function CloudConfessionsStaffCheckInClient() {
             const token = extractCloudConfessionsToken(decodedText);
             if (!UUID_PATTERN.test(token)) {
               setScanError(
-                "Este QR no pertenece a Cloud Confession o no es válido.",
+                "Este QR no pertenece a Cloud & Coffee o no es válido.",
               );
               return;
             }
 
             await scanner.clear().catch(() => undefined);
             scannerRef.current = null;
-            window.location.href = `/cloud-confessions/ticket/${token}`;
+            window.location.href = `/cloud-and-coffee/ticket/${token}`;
           },
           () => undefined,
         );
@@ -66,7 +66,7 @@ export default function CloudConfessionsStaffCheckInClient() {
         </p>
         <h1 className="mt-1 text-2xl font-bold">Escanear entrada</h1>
         <p className="mt-2 text-sm text-white/60">
-          Escanea únicamente QRs de Cloud Confession. Después confirma el
+          Escanea únicamente QRs de Cloud & Coffee. Después confirma el
           ingreso con el PIN independiente del evento.
         </p>
 

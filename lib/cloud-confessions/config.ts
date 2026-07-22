@@ -1,20 +1,22 @@
 export const cloudConfessionsConfig = {
-  slug: "cloud-confessions",
-  name: "Cloud Confession Breakfast",
-  organizer: "C4C7OPS",
+  slug: "cloud-and-coffee",
+  name: "Cloud & Coffee",
+  tagline: "Coffee · Conversations · Cloud",
+  hostedBy: "Hosted by C4c7Ops",
+  organizer: "C4c7Ops",
   description:
-    "Un desayuno privado antes del AWS Summit Bogotá para empezar el día con buena comida, conversaciones reales y networking en un ambiente relajado.",
+    "Pásate antes del AWS Summit Bogotá, tómate un café con nosotros y conversa sin formalidades. Entre 7:00 a. m. y 9:00 a. m., cerca del Ágora.",
   date: "Jueves 30 de julio, 2026",
-  time: "7:00 a. m.",
-  publicLocation: "A pocos pasos del Ágora",
-  exactAddress: "Brumo Bistro",
-  calendarOrganizerEmail: "kasogumo2006@gmail.com",
+  time: "7:00 a. m. – 9:00 a. m.",
+  publicLocation: "Cerca al Ágora",
+  exactAddress: "Antes, un café · Cl. 24d #40-34, Bogotá",
+  calendarOrganizerEmail: "mail@news.c4c7ops.co",
   calendarStartIso: "2026-07-30T07:00:00-05:00",
   calendarEndIso: "2026-07-30T09:00:00-05:00",
   calendarTimezone: "America/Bogota",
   ctaLabel: "Solicitar mi cupo",
   confirmationMessage:
-    "Recibimos tu solicitud para Cloud Confession Breakfast. Nuestro equipo revisará tu registro y te confirmará el cupo próximamente.",
+    "Recibimos tu solicitud para Cloud & Coffee. Nuestro equipo la revisará y te confirmará el cupo pronto.",
   alreadyPendingMessage:
     "Este correo ya tiene una solicitud en revisión. Te confirmaremos el cupo cuando la revisemos.",
   alreadyApprovedMessage:
@@ -23,58 +25,58 @@ export const cloudConfessionsConfig = {
   invitationOnly: true,
   sheetName: "Registros",
   initialStatus: "pendiente_aprobacion",
-  visitStorageKey: "cloud-confessions-visit-tracked",
+  visitStorageKey: "cloud-and-coffee-visit-tracked",
 } as const;
 
 export const cloudConfessionsCopy = {
-  invitationBadge: "Desayuno privado · Por invitación",
-  summitContext: "Desayuno previo al AWS Summit Bogotá",
+  invitationBadge: "Antes del Summit · Por invitación",
+  summitContext: "Pasa antes del AWS Summit Bogotá",
   heroLead:
-    "Empieza el día con buena comida, conversaciones reales y un ambiente relajado antes de entrar a una jornada larga e intensa.",
+    "Tómate un café con nosotros. Conversaciones ligeras, sin agenda formal, entre 7:00 a. m. y 9:00 a. m.",
   conversationTopics: [
     "Lo que funciona cuando trabajas con AWS",
     "Lo que cuesta más de lo esperado",
     "Aprendizajes reales operando en la nube",
-    "Experiencias que rara vez se cuentan",
+    "Historias de café, no de slides",
   ],
   audienceTags: ["Infraestructura", "Cloud", "DevOps", "SRE", "Plataforma", "AWS"],
-  formatNoteTitle: "Nada de conferencias",
+  formatNoteTitle: "Sin presentaciones",
   formatNote:
-    "No hay presentaciones ni agenda formal: solo desayunar bien, pasar un buen rato y conversar sin formalidades.",
+    "No hay agenda formal ni charlas: solo café, conversación y un rato relajado antes del Summit.",
   topicsEyebrow: "De qué se habla",
-  topicsTitle: "Conversaciones reales sobre la nube",
-  aboutEyebrow: "Qué es Cloud Confession",
-  aboutTitle: "Primero desayunamos. Después, el Summit.",
+  topicsTitle: "Conversaciones reales, con café de por medio",
+  aboutEyebrow: "Qué es Cloud & Coffee",
+  aboutTitle: "Primero el café. Después, el Summit.",
   aboutDescription:
-    "Un desayuno privado a pocos pasos del Ágora para líderes y profesionales de infraestructura, cloud, DevOps, SRE y tecnología. Un espacio cercano para conocerse, comer bien y llegar al AWS Summit con nuevas conexiones y mejor energía.",
-  benefitsEyebrow: "Por qué asistir",
-  benefitsTitle: "Más que un registro: una mañana bien empezada",
+    "Un espacio informal cerca del Ágora para pasar entre 7:00 a. m. y 9:00 a. m., tomarte un café con C4c7Ops y conectar con gente de cloud, DevOps, SRE e infraestructura antes de entrar al AWS Summit.",
+  benefitsEyebrow: "Por qué pasar",
+  benefitsTitle: "Una mañana más fácil antes del Summit",
   benefits: [
     {
-      title: "Buena comida",
+      title: "Café con calma",
       description:
-        "Desayuna bien y con calma antes de una jornada larga e intensa en el AWS Summit.",
+        "Empieza el día sin prisa: un café bueno y un rato para respirar antes de la jornada intensa.",
     },
     {
       title: "Conversaciones reales",
       description:
-        "Comparte sin formalidades lo que funciona, lo que cuesta y lo que has aprendido trabajando con la nube.",
+        "Habla de lo que funciona, lo que cuesta y lo que has aprendido — sin micrófonos ni slides.",
     },
     {
-      title: "Networking que suma",
+      title: "Gente de cloud",
       description:
-        "Conoce a otros líderes y profesionales de infraestructura, cloud, DevOps, SRE y tecnología.",
+        "Conoce a otros de infraestructura, cloud, DevOps, SRE y tecnología en un ambiente cercano.",
     },
     {
-      title: "Mejor energía",
+      title: "Llegas mejor al Summit",
       description:
-        "Llega al Summit relajado, con nuevas conexiones y en un ambiente cercano, no una conferencia más.",
+        "Sales con energía, caras nuevas y el día bien empezado.",
     },
   ],
-  registrationEyebrow: "Solicitud de registro",
-  registrationTitle: "Solicita tu cupo",
+  registrationEyebrow: "Solicitud de cupo",
+  registrationTitle: "Solicita tu lugar",
   registrationDescription:
-    "Déjanos tus datos. Nuestro equipo revisará cada solicitud y te confirmará si hay cupo disponible.",
+    "Déjanos tus datos. Revisamos cada solicitud y te confirmamos si hay cupo.",
   form: {
     firstName: "Nombre",
     lastName: "Apellidos",
@@ -83,14 +85,14 @@ export const cloudConfessionsCopy = {
     jobTitle: "Cargo",
     phone: "Número de contacto",
     consent:
-      "Acepto recibir comunicaciones relacionadas con Cloud Confession Breakfast y con el estado de mi solicitud.",
+      "Acepto recibir comunicaciones relacionadas con Cloud & Coffee y con el estado de mi solicitud.",
     submitting: "Enviando solicitud...",
     submit: "Enviar solicitud",
     genericError: "No pudimos completar la solicitud. Intenta de nuevo.",
     connectionError: "No pudimos conectarnos. Revisa tu conexión e intenta de nuevo.",
   },
   footerDescription:
-    "Un desayuno privado antes del AWS Summit Bogotá.",
+    "Coffee · Conversations · Cloud · Hosted by C4c7Ops",
 } as const;
 
 export type CloudConfessionsOrigin = "landing" | "invitation_link";

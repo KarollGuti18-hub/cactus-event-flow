@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cloud & Coffee · Flujo completo</title>
+  <style>
+    :root {
+      --bg: #f4f4f5;
+      --ink: #18181b;
+      --muted: #71717a;
+      --card: #fff;
+      --line: #e4e4e7;
+      --accent: #7f9b28;
+      --dark: #151518;
+      --fail-bg: #fffbeb;
+      --fail-line: #fde68a;
+      --insist-bg: #fff7ed;
+      --insist-line: #fdba74;
+      --ok-bg: #f7fee7;
+      --ok-line: #d9f99d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      padding: 28px 24px 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: -0.3px;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 720px;
+    }
+    .landing {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: var(--dark);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .paths {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+    }
+    .path {
+      background: #ececee;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .path h2 {
+      margin: 0 0 12px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .row {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .card {
+      flex: 0 0 210px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card.fail {
+      background: var(--fail-bg);
+      border-color: var(--fail-line);
+    }
+    .card.insist {
+      background: var(--insist-bg);
+      border-color: var(--insist-line);
+    }
+    .card.ok {
+      background: var(--ok-bg);
+      border-color: var(--ok-line);
+    }
+    .card.dark {
+      background: var(--dark);
+      border-color: var(--dark);
+      color: #fff;
+    }
+    .card.dark .meta { color: #a1a1aa; }
+    .card.dark a { color: #c4e05a; }
+    .card .name {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+    .card .subject {
+      font-size: 12px;
+      margin: 0 0 8px;
+      line-height: 1.35;
+      flex: 1;
+    }
+    .card .meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 0 0 10px;
+      line-height: 1.35;
+    }
+    .card a {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .card a:hover { text-decoration: underline; }
+    .arrow {
+      flex: 0 0 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a1a1aa;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    footer {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 32px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cloud & Coffee · Flujo</h1>
+    <p>Cloud & Coffee · Coffee · Conversations · Cloud. Si falla, insiste con Follow-up 2.</p>
+    <a class="landing" href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir landing →</a>
+  </header>
+
+  <div class="paths">
+    <!-- Camino 1: no abre correos -->
+    <section class="path">
+      <h2>Camino 1 · No abre los correos</h2>
+      <div class="row">
+        <article class="card">
+          <p class="name">Invitación</p>
+          <p class="subject">Cloud & Coffee · tómate un café con nosotros</p>
+          <p class="meta">Lista 11 · inmediato</p>
+          <a href="./Invitación.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card fail">
+          <p class="name">Follow-up 1</p>
+          <p class="subject">¿Te tomas un café con nosotros el 30?</p>
+          <p class="meta">No abrió · +2 días</p>
+          <a href="./Follow-up 1.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card insist">
+          <p class="name">Follow-up 2</p>
+          <p class="subject">Último aviso: Cloud & Coffee</p>
+          <p class="meta">Sigue sin abrir · insistencia final</p>
+          <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Camino 2: abre landing, no hace nada -->
+    <section class="path">
+      <h2>Camino 2 · Abre la landing y no hace nada más</h2>
+      <div class="row">
+        <article class="card dark">
+          <p class="name">Landing</p>
+          <p class="subject">Entra a la página</p>
+          <p class="meta">No envía el form</p>
+          <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card fail">
+          <p class="name">Visitó la landing</p>
+          <p class="subject">¿Terminamos tu solicitud para Cloud & Coffee?</p>
+          <p class="meta">Lista 12 · +1 hora</p>
+          <a href="./Visitó la landing.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card insist">
+          <p class="name">Follow-up 2</p>
+          <p class="subject">Último aviso: Cloud & Coffee</p>
+          <p class="meta">Sigue sin registrar · insistencia final</p>
+          <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Camino 3: form incompleto -->
+    <section class="path">
+      <h2>Camino 3 · Empieza el form y lo deja a medias</h2>
+      <div class="row">
+        <article class="card dark">
+          <p class="name">Landing / form</p>
+          <p class="subject">Empieza a llenar</p>
+          <p class="meta">No termina</p>
+          <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card fail">
+          <p class="name">Registro incompleto</p>
+          <p class="subject">Te faltó un paso para Cloud & Coffee</p>
+          <p class="meta">Lista 13 · +30–60 min</p>
+          <a href="./Registro incompleto.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card insist">
+          <p class="name">Follow-up 2</p>
+          <p class="subject">Último aviso: Cloud & Coffee</p>
+          <p class="meta">Sigue incompleto · insistencia final</p>
+          <a href="./Follow-up 2.html" target="_blank">Ver HTML</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- Camino 4: éxito -->
+    <section class="path">
+      <h2>Camino 4 · Completa la solicitud y es aprobado</h2>
+      <div class="row">
+        <article class="card dark">
+          <p class="name">Landing</p>
+          <p class="subject">Envía el formulario</p>
+          <p class="meta">Registro completo</p>
+          <a href="https://www.c4c7ops.co/cloud-and-coffee" target="_blank" rel="noopener">Abrir</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card ok">
+          <p class="name">Solicitud recibida</p>
+          <p class="subject">Recibimos tu solicitud para Cloud & Coffee</p>
+          <p class="meta">Lista 14 · inmediato</p>
+          <a href="./Solicitud recibida.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card ok">
+          <p class="name">Aprobado + QR</p>
+          <p class="subject">Tu cupo fue aprobado · Cloud & Coffee</p>
+          <p class="meta">Lista 15 · QR + ticket</p>
+          <a href="./Aprobado + QR (ticket).html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card">
+          <p class="name">Recordatorio · 2 días</p>
+          <p class="subject">Te esperamos el jueves · Cloud & Coffee</p>
+          <p class="meta">28 jul</p>
+          <a href="./Recordatorio · 2 días antes.html" target="_blank">Ver HTML</a>
+        </article>
+        <div class="arrow">→</div>
+        <article class="card">
+          <p class="name">Recordatorio · mañana</p>
+          <p class="subject">Mañana nos vemos en Cloud & Coffee</p>
+          <p class="meta">29 jul · 5:00 p. m.</p>
+          <a href="./Recordatorio · mañana.html" target="_blank">Ver HTML</a>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <footer>Cloud & Coffee · C4c7Ops · revisión interna</footer>
+</body>
+</html>

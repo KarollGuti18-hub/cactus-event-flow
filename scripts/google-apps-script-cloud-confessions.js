@@ -1,11 +1,11 @@
 /**
- * Google Apps Script — Cloud Confession Breakfast
+ * Google Apps Script — Cloud & Coffee
  *
  * SETUP:
- * 1. Crear el archivo "Registros - Cloud Confession Breakfast".
+ * 1. Crear el archivo "Registros - Cloud & Coffee".
  * 2. Extensiones → Apps Script → pegar este archivo.
  * 3. Reemplazar SECRET y WEBHOOK_URL.
- * 4. Autorizar el script con la cuenta organizadora: kasogumo2006@gmail.com
+ * 4. Autorizar el script con la cuenta organizadora (Calendar).
  * 5. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
  * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
  * 7. Crear un activador instalable para onEdit (Al editar).
@@ -20,12 +20,12 @@ const CONFIG = {
   SHEET_NAME: "Registros",
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
-    "https://www.c4c7ops.co/api/cloud-confessions/webhooks/sheets-approval",
-  ORGANIZER_EMAIL: "kasogumo2006@gmail.com",
-  EVENT_TITLE: "Cloud Confession Breakfast",
-  EVENT_LOCATION: "Brumo Bistro · a pocos pasos del Ágora",
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
+  ORGANIZER_EMAIL: "mail@news.c4c7ops.co",
+  EVENT_TITLE: "Cloud & Coffee",
+  EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
   EVENT_DESCRIPTION:
-    "Desayuno privado de C4C7OPS antes del AWS Summit Bogotá. Buena comida, conversaciones reales y networking en un ambiente relajado. Ubicación: Brumo Bistro, a pocos pasos del Ágora.",
+    "Cloud & Coffee · Coffee · Conversations · Cloud · Hosted by C4c7Ops. Pásate antes del AWS Summit Bogotá, tómate un café con nosotros entre 7:00 a. m. y 9:00 a. m. Ubicación: Antes, un café · Cl. 24d #40-34, Bogotá (cerca al Ágora).",
   EVENT_START: new Date("2026-07-30T07:00:00-05:00"),
   EVENT_END: new Date("2026-07-30T09:00:00-05:00"),
   EVENT_PROPERTY_KEY: "CLOUD_CONFESSIONS_CALENDAR_EVENT_ID",
@@ -151,7 +151,7 @@ function onEdit(e) {
   const statusCode = response.getResponseCode();
   if (statusCode < 200 || statusCode >= 300) {
     throw new Error(
-      "El webhook de Cloud Confession falló con estado " + statusCode,
+      "El webhook de Cloud & Coffee falló con estado " + statusCode,
     );
   }
 

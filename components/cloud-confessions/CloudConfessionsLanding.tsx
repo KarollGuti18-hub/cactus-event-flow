@@ -130,7 +130,7 @@ export default function CloudConfessionsLanding() {
     setSubmitError("");
 
     try {
-      const response = await fetch("/api/cloud-confessions/register", {
+      const response = await fetch("/api/cloud-and-coffee/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -204,7 +204,7 @@ export default function CloudConfessionsLanding() {
       // El tracking continúa aunque el navegador bloquee sessionStorage.
     }
 
-    void fetch("/api/cloud-confessions/track-visit", {
+    void fetch("/api/cloud-and-coffee/track-visit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, firstName, lastName }),
@@ -228,7 +228,7 @@ export default function CloudConfessionsLanding() {
 
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      void fetch("/api/cloud-confessions/track-incomplete", {
+      void fetch("/api/cloud-and-coffee/track-incomplete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -340,11 +340,14 @@ export default function CloudConfessionsLanding() {
               </p>
               <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
                 Cloud
-                <span className="block text-gradient-green">Confessions</span>
-                <span className="mt-4 block text-2xl font-semibold tracking-[-0.035em] text-white/72 sm:text-4xl">
-                  Breakfast
-                </span>
+                <span className="block text-gradient-green">&amp; Coffee</span>
               </h1>
+              <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/55 sm:text-base">
+                {cloudConfessionsConfig.tagline}
+              </p>
+              <p className="mt-2 text-xs font-medium tracking-[0.04em] text-white/40">
+                {cloudConfessionsConfig.hostedBy}
+              </p>
               <p className="mt-8 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl sm:leading-9">
                 {cloudConfessionsCopy.heroLead}
               </p>
@@ -407,7 +410,7 @@ export default function CloudConfessionsLanding() {
                   </h2>
                 </div>
                 <span className="shrink-0 rounded-full border border-cactus-green/25 bg-cactus-green/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-cactus-green">
-                  Privado
+                  Por invitación
                 </span>
               </div>
               <p className="mt-3 text-xs leading-5 text-white/48">
