@@ -309,9 +309,9 @@ export default function CloudConfessionsLanding() {
 
       <main
         id="inicio"
-        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:pb-32 xl:gap-x-16"
+        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-12 pt-10 sm:pt-14 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:justify-center lg:pb-8 lg:pt-16">
+        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-16 pt-10 sm:pt-14 lg:col-span-2 lg:row-start-1 lg:aspect-[3794/1536] lg:min-h-0 lg:justify-center lg:pb-20 lg:pt-16">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
             <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[96%]">
               <Image
@@ -371,7 +371,7 @@ export default function CloudConfessionsLanding() {
                 ))}
               </div>
 
-              <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+              <div className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-3 sm:mt-14">
                 <a
                   href="#registro"
                   className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
@@ -387,7 +387,7 @@ export default function CloudConfessionsLanding() {
               </div>
             </div>
 
-            <div className="mt-16 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 lg:hidden">
+            <div className="mt-20 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 lg:hidden">
               <span className="h-px w-12 bg-cactus-green/50" />
               Sigue explorando
             </div>
@@ -396,7 +396,7 @@ export default function CloudConfessionsLanding() {
 
         <aside
           id="registro"
-          className="section-anchor relative z-10 mb-20 self-start lg:sticky lg:top-24 lg:col-start-2 lg:row-start-2 lg:row-span-3 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+          className="section-anchor relative z-10 mb-20 mt-4 self-start sm:mt-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-2 lg:row-span-3 lg:mb-0 lg:mt-2 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
         >
           <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/20 bg-[#151518]/95 shadow-[0_30px_100px_rgba(0,0,0,0.5),0_0_0_1px_rgba(127,155,40,0.04)] backdrop-blur-2xl">
             <div className="border-b border-white/8 bg-gradient-to-br from-cactus-green/14 to-transparent px-6 py-5">
@@ -671,11 +671,11 @@ export default function CloudConfessionsLanding() {
           </div>
         </aside>
 
-        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-2">
+        <section className="border-t border-white/8 pt-24 pb-20 sm:pt-28 sm:pb-24 lg:col-start-1 lg:row-start-2">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
             {cloudConfessionsCopy.aboutEyebrow}
           </p>
-          <h2 className="mt-5 max-w-3xl text-4xl font-extrabold leading-tight tracking-[-0.045em] sm:text-5xl">
+          <h2 className="mt-6 max-w-3xl text-4xl font-extrabold leading-tight tracking-[-0.045em] sm:text-5xl">
             {cloudConfessionsCopy.aboutTitle}
           </h2>
           <div className="mt-10 grid gap-8 sm:grid-cols-[1.2fr_0.8fr]">
