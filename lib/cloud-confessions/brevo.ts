@@ -214,3 +214,37 @@ export async function upsertCloudConfessionsContact({
 
   return sendToBrevo(body);
 }
+
+/**
+ * Añade contactos a una lista con el endpoint dedicado.
+ * Evita el "move" en el mismo upsert (Brevo no dispara automation "added to list"
+ * cuando el contacto se mueve desde otra lista en la misma petición).
+ */
+export async function addCloudConfessionsContactsToList(
+  listId: number,
+  emails: string[],
+): Promise<Response> {
+  const apiKey = getBrevoApiKey();
+  if (!apiKey) {
+    return new Response(JSON.stringify({ message: "Brevo API key missing" }), {
+      status: 500,
+      headers: { "content-type": "application/json" },
+    });
+  }
+
+  return fetch(
+    `https://api.brevo.com/v3/contacts/lists/${listId}/contacts/add`,
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "api-key": apiKey,
+      },
+      body: JSON.stringify({
+        emails: emails.map((email) => normalizeEmail(email)),
+      }),
+      signal: AbortSignal.timeout(10_000),
+    },
+  );
+}

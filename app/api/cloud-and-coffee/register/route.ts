@@ -1,8 +1,9 @@
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 
-import { getBrevoApiKey } from "@/lib/brevo";
+import { getBrevoApiKey, getBrevoErrorMessage } from "@/lib/brevo";
 import {
+  addCloudConfessionsContactsToList,
   buildCloudConfessionsAttributes,
   buildSharedContactAttributes,
   getCloudConfessionsListIds,
@@ -14,6 +15,7 @@ import {
   upsertCloudConfessionsRegistration,
 } from "@/lib/cloud-confessions/google-sheets";
 import { getCloudConfessionsTicketUrl } from "@/lib/cloud-confessions/qr";
+import { sendSolicitudRecibidaEmail } from "@/lib/cloud-confessions/registration-email";
 import type { CloudConfessionsRegistrationPayload } from "@/lib/cloud-confessions/types";
 import { validateRegistrationPayload } from "@/lib/cloud-confessions/validation";
 
@@ -85,7 +87,6 @@ export async function POST(request: Request) {
             registeredAt: existing.registeredAt,
           }),
         },
-        listIds: [listIds.registered],
         unlinkListIds: [listIds.visited, listIds.incomplete],
       });
 
@@ -98,6 +99,9 @@ export async function POST(request: Request) {
           { status: 502 },
         );
       }
+
+      // Re-añadir a lista 14 por si salió; no re-dispara automation si ya estaba.
+      await addCloudConfessionsContactsToList(listIds.registered, [data.email]);
 
       let sheetsSynced = false;
       try {
@@ -129,6 +133,8 @@ export async function POST(request: Request) {
     const registrationId = existing?.id || randomUUID();
     const registeredAt = existing?.registeredAt || new Date().toISOString();
 
+    // 1) Upsert atributos y sacar de visitó/incompleto/aprobados (sin meter a 14 aún).
+    // 2) Añadir a lista 14 en llamada aparte para que Brevo dispare "Contact added to list".
     const brevoResponse = await upsertCloudConfessionsContact({
       email: data.email,
       attributes: {
@@ -146,16 +152,42 @@ export async function POST(request: Request) {
           registeredAt,
         }),
       },
-      listIds: [listIds.registered],
       unlinkListIds: [listIds.visited, listIds.incomplete, listIds.approved],
     });
 
     if (!brevoResponse.ok) {
+      const brevoError = await getBrevoErrorMessage(brevoResponse);
       console.error("Cloud Confession registration failed in Brevo", {
         status: brevoResponse.status,
+        brevoError,
       });
       return NextResponse.json(
-        { error: "No pudimos completar la solicitud" },
+        {
+          error: "No pudimos completar la solicitud en Brevo",
+          brevoStatus: brevoResponse.status,
+          brevoError,
+        },
+        { status: 502 },
+      );
+    }
+
+    const addToListResponse = await addCloudConfessionsContactsToList(
+      listIds.registered,
+      [data.email],
+    );
+
+    if (!addToListResponse.ok) {
+      const brevoError = await getBrevoErrorMessage(addToListResponse);
+      console.error("Cloud Confession add to registered list failed", {
+        status: addToListResponse.status,
+        brevoError,
+      });
+      return NextResponse.json(
+        {
+          error: "Registramos tus datos pero no pudimos añadirlos a la lista",
+          brevoStatus: addToListResponse.status,
+          brevoError,
+        },
         { status: 502 },
       );
     }
@@ -172,12 +204,43 @@ export async function POST(request: Request) {
         );
         sheetsSynced = true;
       } catch (error) {
-        sheetsError = "No se pudo sincronizar el registro adicional";
+        sheetsError =
+          error instanceof Error
+            ? error.message
+            : "No se pudo sincronizar el registro adicional";
         console.error("Cloud Confession Sheets sync failed", {
           errorType: error instanceof Error ? error.name : "UnknownError",
-          message: error instanceof Error ? error.message : "unknown",
+          message: sheetsError,
         });
       }
+    } else {
+      sheetsError =
+        "Faltan CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL o CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET en Vercel";
+    }
+
+    // El correo lo enviamos por API transaccional: las automations de "added to list"
+    // en Brevo no están disparando de forma fiable para este flujo.
+    let emailSent = false;
+    let emailError: string | undefined;
+    try {
+      const emailResult = await sendSolicitudRecibidaEmail({
+        email: data.email,
+        firstName: data.firstName,
+      });
+      emailSent = emailResult.sent;
+      emailError = emailResult.error;
+      if (!emailSent) {
+        console.error("Cloud Confession registration email failed", {
+          emailError,
+        });
+      }
+    } catch (error) {
+      emailError =
+        error instanceof Error ? error.message : "No se pudo enviar el correo";
+      console.error("Cloud Confession registration email failed", {
+        errorType: error instanceof Error ? error.name : "UnknownError",
+        message: emailError,
+      });
     }
 
     return NextResponse.json(
@@ -186,8 +249,11 @@ export async function POST(request: Request) {
         alreadyRegistered: false,
         status: "pending_approval",
         registrationId,
+        sheetsConfigured,
         sheetsSynced,
+        emailSent,
         ...(sheetsError ? { sheetsError } : {}),
+        ...(emailError ? { emailError } : {}),
       },
       { status: 200 },
     );

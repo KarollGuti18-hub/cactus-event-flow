@@ -8,11 +8,11 @@
  * 4. Autorizar el script con la cuenta organizadora (Calendar).
  * 5. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
  * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
- * 7. Crear un activador instalable para onEdit (Al editar).
+ * 7. Ejecutar una vez instalarActivadorOnEdit() (menú Cloud & Coffee o desde el editor).
  * 8. Ejecutar una vez ensureCalendarEvent() para crear el evento maestro.
  *
- * Al aprobar: genera QR vía webhook e invita al calendario de Google.
- * Al rechazar: actualiza Brevo/Sheets y retira la invitación del calendario.
+ * Al editar estado a "aprobado": genera QR vía webhook e invita al Calendar.
+ * Al editar estado a "rechazado": actualiza Brevo/Sheets y retira la invitación.
  */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -21,7 +21,7 @@ const CONFIG = {
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
-  ORGANIZER_EMAIL: "mail@news.c4c7ops.co",
+  ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
   EVENT_DESCRIPTION:
@@ -74,7 +74,7 @@ function doPost(e) {
   try {
     const payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
 
-    if (payload.secret !== CONFIG.SECRET) {
+    if (String(payload.secret || "").trim() !== String(CONFIG.SECRET || "").trim()) {
       return jsonResponse({ success: false, error: "No autorizado" });
     }
 
@@ -132,10 +132,17 @@ function onEdit(e) {
   const status = parseStatus(e.value);
   if (status !== "aprobado" && status !== "rechazado") return;
 
+  processStatusChange_(rowNumber, status);
+}
+
+function processStatusChange_(rowNumber, status) {
+  const sheet = getSheet();
   const email = normalizeEmail(
     sheet.getRange(rowNumber, COL.EMAIL).getValue(),
   );
-  if (!email) return;
+  if (!email) {
+    throw new Error("La fila no tiene email.");
+  }
 
   const response = UrlFetchApp.fetch(CONFIG.WEBHOOK_URL, {
     method: "post",
@@ -149,9 +156,13 @@ function onEdit(e) {
   });
 
   const statusCode = response.getResponseCode();
+  const body = response.getContentText();
   if (statusCode < 200 || statusCode >= 300) {
     throw new Error(
-      "El webhook de Cloud & Coffee falló con estado " + statusCode,
+      "El webhook de Cloud & Coffee falló con estado " +
+        statusCode +
+        (body ? " · " + body : "") +
+        ". Revisa SECRET y WEBHOOK_URL en el script, y las env de Vercel.",
     );
   }
 
@@ -166,6 +177,46 @@ function onEdit(e) {
   }
 
   sheet.getRange(rowNumber, COL.UPDATED_AT).setValue(now);
+}
+
+/**
+ * Menú: el activador onEdit es lo principal.
+ * Ejecuta una vez "Instalar activador onEdit" para que al poner "aprobado" corra solo.
+ */
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("Cloud & Coffee")
+    .addItem("Instalar activador onEdit", "instalarActivadorOnEdit")
+    .addItem("Crear/actualizar evento Calendar", "ensureCalendarEvent")
+    .addToUi();
+}
+
+/**
+ * Crea el activador instalable (obligatorio para UrlFetchApp + Calendar).
+ * Ejecutar UNA vez desde el menú o desde el editor (función instalarActivadorOnEdit).
+ */
+function instalarActivadorOnEdit() {
+  const spreadsheetId = SpreadsheetApp.getActiveSpreadsheet().getId();
+  const triggers = ScriptApp.getProjectTriggers();
+
+  for (let i = 0; i < triggers.length; i += 1) {
+    const trigger = triggers[i];
+    if (
+      trigger.getHandlerFunction() === "onEdit" &&
+      trigger.getEventType() === ScriptApp.EventType.ON_EDIT
+    ) {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  }
+
+  ScriptApp.newTrigger("onEdit")
+    .forSpreadsheet(spreadsheetId)
+    .onEdit()
+    .create();
+
+  SpreadsheetApp.getUi().alert(
+    "Activador listo. A partir de ahora, al escribir \"aprobado\" o \"rechazado\" en la columna estado, se procesa solo.",
+  );
 }
 
 function getSheet() {
@@ -469,8 +520,7 @@ function listNeedingProcessing() {
 }
 
 function getOrganizerCalendar() {
-  // El script debe autorizarse con kasogumo2006@gmail.com.
-  // Usamos el calendario principal de esa cuenta.
+  // Autorizar el Apps Script con ext-s@c4c7us.com (cuenta Google del Calendar).
   return CalendarApp.getDefaultCalendar();
 }
 

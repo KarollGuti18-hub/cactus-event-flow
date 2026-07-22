@@ -44,13 +44,20 @@ async function callCloudConfessionsAppsScript(
     signal: AbortSignal.timeout(20_000),
   });
 
-  const result = (await response.json().catch(() => ({}))) as
-    CloudConfessionsAppsScriptResponse;
+  const rawText = await response.text();
+  let result: CloudConfessionsAppsScriptResponse = {};
+  try {
+    result = JSON.parse(rawText) as CloudConfessionsAppsScriptResponse;
+  } catch {
+    throw new Error(
+      `Apps Script no devolvió JSON (HTTP ${response.status}). Revisa la URL /exec y que la app web esté desplegada. Respuesta: ${rawText.slice(0, 180)}`,
+    );
+  }
 
   if (!response.ok || result.error || result.success === false) {
     throw new Error(
       result.error ??
-        `Error al comunicarse con Google Apps Script (${response.status})`,
+        `Error al comunicarse con Google Apps Script (HTTP ${response.status})`,
     );
   }
 

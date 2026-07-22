@@ -10,7 +10,7 @@ export const cloudConfessionsConfig = {
   time: "7:00 – 9:00 a. m.",
   publicLocation: "Cerca al Ágora",
   exactAddress: "Antes, un café · Cl. 24d #40-34, Bogotá",
-  calendarOrganizerEmail: "mail@news.c4c7ops.co",
+  calendarOrganizerEmail: "ext-s@c4c7us.com",
   calendarStartIso: "2026-07-30T07:00:00-05:00",
   calendarEndIso: "2026-07-30T09:00:00-05:00",
   calendarTimezone: "America/Bogota",
