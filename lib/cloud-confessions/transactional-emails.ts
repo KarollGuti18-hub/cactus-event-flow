@@ -1,5 +1,5 @@
 import {
-  getBrevoSender,
+  getCloudConfessionsSender,
   sendTransactionalEmail,
 } from "@/lib/brevo";
 import { getAppUrl } from "@/lib/app-url";
@@ -77,11 +77,12 @@ async function send(input: {
   preview: string;
   html: string;
 }): Promise<{ sent: boolean; error?: string }> {
-  const sender = getBrevoSender();
+  const sender = getCloudConfessionsSender();
   if (!sender) {
     return {
       sent: false,
-      error: "Faltan BREVO_SENDER_EMAIL / BREVO_SENDER_NAME en Vercel",
+      error:
+        "Faltan BREVO_SENDER_EMAIL (o BREVO_CLOUD_CONFESSIONS_SENDER_NAME) en Vercel",
     };
   }
 

@@ -79,6 +79,23 @@ export function getBrevoSender(): { email: string; name: string } | null {
   return { email, name };
 }
 
+/** Remitente Cloud & Coffee: mismo mail@, nombre persona (Sofía). */
+export function getCloudConfessionsSender(): {
+  email: string;
+  name: string;
+} | null {
+  const email = process.env.BREVO_SENDER_EMAIL?.trim();
+  const name =
+    process.env.BREVO_CLOUD_CONFESSIONS_SENDER_NAME?.trim() ||
+    "Sofía de C4c7Ops";
+
+  if (!email) {
+    return null;
+  }
+
+  return { email, name };
+}
+
 export async function getBrevoErrorMessage(response: Response): Promise<string> {
   const error = await response.json().catch(() => ({}));
   return typeof error.message === "string" ? error.message : "Error al sincronizar con Brevo";
