@@ -28,7 +28,7 @@ const CONFIG = {
   SHEET_NAME: "Registros",
   INVITES_SHEET_NAME: "Invitados",
   JOBS_SHEET_NAME: "ColaEmails",
-  SECRET: "9fed047498b8d0e7c9ebfa659bb4aa93a639a6506bc7e54c622c85b32101682e",
+  SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
   INVITE_WEBHOOK_URL:
