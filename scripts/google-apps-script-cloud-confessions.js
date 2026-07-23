@@ -16,8 +16,8 @@
  * Hoja "Invitados" (columnas):
  *   Nombre | Apellido | Correo | Estado | Empresa | Cargo | Invitado el | Actualizado
  * Pega la lista (Nombre, Apellido, Correo). NO se envía al pegar.
- * Para enviar: marca la casilla verde ▶ Correr (I1), o menú → ▶ Correr invitaciones.
- * Si falla: popup + columna Error (J).
+ * Para enviar: marca ▶ Correr (I1) o menú → Correr (lotes de 20).
+ * Si hay más de 20, el resto sale solo cada 20 min. Si falla: columna Error (J).
  * Estado se actualiza solo: pendiente → invitado → visitó → incompleto → registrado → aprobado/rechazado.
  *
  * Hoja "ColaEmails": cola de correos diferidos (cron externo / Vercel).
@@ -305,7 +305,8 @@ function onOpen() {
     .addItem("1. Instalar activador", "instalarActivadorOnEdit")
     .addItem("2. Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
     .addItem("3. Configurar secreto webhook", "configurarSecretoWebhook")
-    .addItem("▶ Correr invitaciones", "correrInvitacionesDesdeMenu")
+    .addItem("▶ Correr invitaciones (lotes de 20)", "correrInvitacionesDesdeMenu")
+    .addItem("Cancelar lotes automáticos", "cancelarLotesInvitados")
     .addItem("Probar invite (fila activa)", "probarInviteFilaActiva")
     .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
@@ -928,6 +929,13 @@ const INVITE_RUN = {
   ROW: 1,
 };
 
+/** Lotes de invitaciones (protege reputación del remitente). */
+const INVITE_BATCH = {
+  SIZE: 20,
+  DELAY_MINUTES: 20,
+  TRIGGER_HANDLER: "correrSiguienteLoteInvitados",
+};
+
 /** Estados en los que ya no se reenvía la invitación automática. */
 const INVITE_DONE_STATUSES = {
   invitado: true,
@@ -1006,7 +1014,7 @@ function formatInvitesSheet_(sheet) {
   check.insertCheckboxes();
   check.setValue(false);
   check.setNote(
-    "▶ CORRER: marca esta casilla para enviar invitaciones pendientes. No se envía al pegar correos.",
+    "▶ CORRER: envía hasta 20 pendientes. Si quedan más, el siguiente lote sale solo en ~20 min. Menú → Cancelar lotes para detener.",
   );
   // Texto visible al lado en la fila de encabezado vía comentario + color fuerte
   check.setBackground("#9ab83a");
@@ -1258,23 +1266,127 @@ function processInviteRow_(rowNumber) {
 }
 
 /**
- * Envía invitaciones a filas pendientes (con correo y sin envío previo).
- * @param {boolean=} skipConfirm si true (casilla Correr), no pide confirmación.
+ * Envía invitaciones en lotes de 20.
+ * Si quedan más, programa solo el siguiente lote a los 20 minutos.
+ * @param {boolean=} skipConfirm si true (casilla Correr / lote auto), no pide confirmación.
+ * @param {boolean=} fromAutoLote si true, viene del activador automático.
  */
-function correrInvitaciones(skipConfirm) {
+function correrInvitaciones(skipConfirm, fromAutoLote) {
   SpreadsheetApp.getActiveSpreadsheet().toast(
     "Revisando invitados pendientes…",
     "▶ Correr",
     5,
   );
   const sheet = getInvitesSheet();
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) {
-    SpreadsheetApp.getUi().alert("No hay filas en Invitados.");
+  const pendingRows = listPendingInviteRows_(sheet);
+
+  if (pendingRows.length === 0) {
+    cancelarLotesInvitadosTriggers_();
+    if (!fromAutoLote) {
+      SpreadsheetApp.getUi().alert(
+        "No hay invitaciones pendientes.\n\nPega Nombre | Apellido | Correo con Estado vacío o \"pendiente\", luego marca Correr.",
+      );
+    } else {
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        "Lotes terminados: no quedan pendientes.",
+        "Cloud & Coffee",
+        8,
+      );
+    }
     return;
   }
 
+  const batchSize = INVITE_BATCH.SIZE;
+  const thisBatch = pendingRows.slice(0, batchSize);
+  const remainingAfter = pendingRows.length - thisBatch.length;
+
+  if (!skipConfirm && !fromAutoLote) {
+    const ui = SpreadsheetApp.getUi();
+    const confirm = ui.alert(
+      "Correr invitaciones (lotes de " + batchSize + ")",
+      "Hay " +
+        pendingRows.length +
+        " pendiente(s).\n\nEste lote enviará hasta " +
+        batchSize +
+        " ahora" +
+        (remainingAfter > 0
+          ? " y programará el resto cada " +
+            INVITE_BATCH.DELAY_MINUTES +
+            " min (automático)."
+          : ".") +
+        "\n\n¿Continuar?",
+      ui.ButtonSet.YES_NO,
+    );
+    if (confirm !== ui.Button.YES) return;
+  }
+
+  let ok = 0;
+  let fail = 0;
+  const errors = [];
+  for (let i = 0; i < thisBatch.length; i += 1) {
+    try {
+      processInviteRow_(thisBatch[i]);
+      ok += 1;
+    } catch (error) {
+      fail += 1;
+      if (errors.length < 3) {
+        const email = normalizeEmail(
+          sheet.getRange(thisBatch[i], INV.EMAIL).getValue(),
+        );
+        errors.push(
+          email +
+            ": " +
+            (error && error.message ? error.message : "error"),
+        );
+      }
+    }
+  }
+
+  const stillPending = listPendingInviteRows_(sheet).length;
+  if (stillPending > 0) {
+    scheduleNextInviteBatch_();
+  } else {
+    cancelarLotesInvitadosTriggers_();
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    ok + " ok · " + fail + " error · quedan " + stillPending,
+    "Correr invitaciones",
+    10,
+  );
+
+  if (fromAutoLote) {
+    return;
+  }
+
+  let message =
+    "Lote enviado: " +
+    ok +
+    " ok · " +
+    fail +
+    " con error.\nPendientes restantes: " +
+    stillPending +
+    ".";
+  if (stillPending > 0) {
+    message +=
+      "\n\nEl siguiente lote de hasta " +
+      batchSize +
+      " saldrá solo en ~" +
+      INVITE_BATCH.DELAY_MINUTES +
+      " min. Para detener: menú → Cancelar lotes automáticos.";
+  } else {
+    message += "\n\nNo quedan pendientes.";
+  }
+  if (errors.length) {
+    message += "\n\nDetalle (también en columna Error):\n" + errors.join("\n");
+  }
+  SpreadsheetApp.getUi().alert(message);
+}
+
+function listPendingInviteRows_(sheet) {
+  const lastRow = sheet.getLastRow();
   const pendingRows = [];
+  if (lastRow < 2) return pendingRows;
   for (let row = 2; row <= lastRow; row += 1) {
     const email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
     if (!email) continue;
@@ -1288,59 +1400,36 @@ function correrInvitaciones(skipConfirm) {
     if (alreadyInvitedAt) continue;
     pendingRows.push(row);
   }
+  return pendingRows;
+}
 
-  if (pendingRows.length === 0) {
-    SpreadsheetApp.getUi().alert(
-      "No hay invitaciones pendientes.\n\nPega Nombre | Apellido | Correo con Estado vacío o \"pendiente\", luego marca Correr.",
-    );
-    return;
-  }
+/** Lo llama el activador temporizado entre lotes. */
+function correrSiguienteLoteInvitados() {
+  correrInvitaciones(true, true);
+}
 
-  if (!skipConfirm) {
-    const ui = SpreadsheetApp.getUi();
-    const confirm = ui.alert(
-      "Correr invitaciones",
-      "Se enviarán " +
-        pendingRows.length +
-        " invitación(es) pendiente(s). ¿Continuar?",
-      ui.ButtonSet.YES_NO,
-    );
-    if (confirm !== ui.Button.YES) return;
-  }
+function scheduleNextInviteBatch_() {
+  cancelarLotesInvitadosTriggers_();
+  ScriptApp.newTrigger(INVITE_BATCH.TRIGGER_HANDLER)
+    .timeBased()
+    .after(INVITE_BATCH.DELAY_MINUTES * 60 * 1000)
+    .create();
+}
 
-  let ok = 0;
-  let fail = 0;
-  const errors = [];
-  for (let i = 0; i < pendingRows.length; i += 1) {
-    try {
-      processInviteRow_(pendingRows[i]);
-      ok += 1;
-    } catch (error) {
-      fail += 1;
-      if (errors.length < 3) {
-        const email = normalizeEmail(
-          sheet.getRange(pendingRows[i], INV.EMAIL).getValue(),
-        );
-        errors.push(
-          email +
-            ": " +
-            (error && error.message ? error.message : "error"),
-        );
-      }
+function cancelarLotesInvitadosTriggers_() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i += 1) {
+    if (triggers[i].getHandlerFunction() === INVITE_BATCH.TRIGGER_HANDLER) {
+      ScriptApp.deleteTrigger(triggers[i]);
     }
   }
+}
 
-  SpreadsheetApp.getActiveSpreadsheet().toast(
-    ok + " ok · " + fail + " con error",
-    "Correr invitaciones",
-    8,
+function cancelarLotesInvitados() {
+  cancelarLotesInvitadosTriggers_();
+  SpreadsheetApp.getUi().alert(
+    "Lotes automáticos cancelados.\nLos pendientes siguen en la hoja; puedes volver a Correr cuando quieras.",
   );
-  let message = "Invitaciones enviadas: " + ok + " ok · " + fail + " con error.";
-  if (errors.length) {
-    message +=
-      "\n\nDetalle (también en columna Error):\n" + errors.join("\n");
-  }
-  SpreadsheetApp.getUi().alert(message);
 }
 
 /** Alias por si quedó referenciado el nombre anterior. */
