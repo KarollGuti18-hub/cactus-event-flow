@@ -67,7 +67,7 @@ function landingUrl(firstName: string, lastName: string, email: string): string 
 }
 
 function ctaButton(href: string, label: string): string {
-  return `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:24px 0 0;"><tr><td style="border-radius:999px;background:#7f9b28;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:16px 28px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(label)} →</a></td></tr></table>`;
+  return `<table role="presentation" cellspacing="0" cellpadding="0" align="center" style="margin:24px auto 0;"><tr><td align="center" style="border-radius:999px;background:#7f9b28;"><a href="${escapeHtml(href)}" style="display:inline-block;padding:16px 28px;color:#fff;font-size:15px;font-weight:700;text-decoration:none;">${escapeHtml(label)} →</a></td></tr></table>`;
 }
 
 async function send(input: {
