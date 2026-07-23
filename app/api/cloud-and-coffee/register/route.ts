@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 
 import { getBrevoApiKey, getBrevoErrorMessage } from "@/lib/brevo";
 import {
@@ -21,6 +21,45 @@ import { onCloudCoffeeRegistered } from "@/lib/cloud-confessions/email-flow";
 import { updateCloudCoffeeInviteeStatus } from "@/lib/cloud-confessions/email-queue";
 import type { CloudConfessionsRegistrationPayload } from "@/lib/cloud-confessions/types";
 import { validateRegistrationPayload } from "@/lib/cloud-confessions/validation";
+
+function scheduleRegistrationSideEffects(input: {
+  email: string;
+  firstName: string;
+  sendConfirmationEmail: boolean;
+}) {
+  after(() => {
+    void (async () => {
+      try {
+        await onCloudCoffeeRegistered(input.email);
+      } catch (error) {
+        console.error("Cloud Confession cancel follow-ups failed", {
+          message: error instanceof Error ? error.message : "unknown",
+        });
+      }
+
+      void updateCloudCoffeeInviteeStatus(input.email, "registrado");
+
+      if (!input.sendConfirmationEmail) return;
+
+      try {
+        const emailResult = await sendSolicitudRecibidaEmail({
+          email: input.email,
+          firstName: input.firstName,
+        });
+        if (!emailResult.sent) {
+          console.error("Cloud Confession registration email failed", {
+            emailError: emailResult.error,
+          });
+        }
+      } catch (error) {
+        console.error("Cloud Confession registration email failed", {
+          errorType: error instanceof Error ? error.name : "UnknownError",
+          message: error instanceof Error ? error.message : "unknown",
+        });
+      }
+    })();
+  });
+}
 
 export async function POST(request: Request) {
   try {
@@ -105,7 +144,6 @@ export async function POST(request: Request) {
 
       // Re-añadir a lista 14 por si salió; no re-dispara automation si ya estaba.
       await addCloudConfessionsContactsToList(listIds.registered, [data.email]);
-      void updateCloudCoffeeInviteeStatus(data.email, "registrado");
 
       let sheetsSynced = false;
       try {
@@ -121,6 +159,12 @@ export async function POST(request: Request) {
           message: error instanceof Error ? error.message : "unknown",
         });
       }
+
+      scheduleRegistrationSideEffects({
+        email: data.email,
+        firstName: data.firstName,
+        sendConfirmationEmail: false,
+      });
 
       return NextResponse.json(
         {
@@ -205,9 +249,6 @@ export async function POST(request: Request) {
       );
     }
 
-    await onCloudCoffeeRegistered(data.email);
-    void updateCloudCoffeeInviteeStatus(data.email, "registrado");
-
     let sheetsSynced = false;
     let sheetsError: string | undefined;
 
@@ -249,30 +290,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // El correo lo enviamos por API transaccional: las automations de "added to list"
-    // en Brevo no están disparando de forma fiable para este flujo.
-    let emailSent = false;
-    let emailError: string | undefined;
-    try {
-      const emailResult = await sendSolicitudRecibidaEmail({
-        email: data.email,
-        firstName: data.firstName,
-      });
-      emailSent = emailResult.sent;
-      emailError = emailResult.error;
-      if (!emailSent) {
-        console.error("Cloud Confession registration email failed", {
-          emailError,
-        });
-      }
-    } catch (error) {
-      emailError =
-        error instanceof Error ? error.message : "No se pudo enviar el correo";
-      console.error("Cloud Confession registration email failed", {
-        errorType: error instanceof Error ? error.name : "UnknownError",
-        message: emailError,
-      });
-    }
+    // Responder ya: correo + cancelar follow-ups no deben bloquear la UI.
+    scheduleRegistrationSideEffects({
+      email: data.email,
+      firstName: data.firstName,
+      sendConfirmationEmail: true,
+    });
 
     return NextResponse.json(
       {
@@ -282,9 +305,7 @@ export async function POST(request: Request) {
         registrationId,
         sheetsConfigured,
         sheetsSynced,
-        emailSent,
-        ...(sheetsError ? { sheetsError } : {}),
-        ...(emailError ? { emailError } : {}),
+        emailSent: true,
       },
       { status: 200 },
     );
