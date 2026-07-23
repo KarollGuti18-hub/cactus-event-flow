@@ -32,6 +32,8 @@ const CONFIG = {
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
   INVITE_WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-invite",
+  RESET_TEST_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-reset-test",
   ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
@@ -276,6 +278,7 @@ function onOpen() {
     .addItem("Instalar activador onEdit", "instalarActivadorOnEdit")
     .addItem("Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
     .addItem("Procesar invitados pendientes", "procesarInvitadosPendientes")
+    .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addItem("Crear/actualizar evento Calendar", "ensureCalendarEvent")
     .addToUi();
 }
@@ -1044,6 +1047,104 @@ function updateInviteeStatus(email, status, invitedAt) {
     if (!currentInvited || invitedAt) {
       sheet.getRange(row, INV.INVITED_AT).setValue(invitedAt || now);
     }
+  }
+}
+
+/**
+ * Resetea un correo ya usado para volver a probar el funnel completo.
+ * Uso: selecciona la fila en Invitados (o escribe el correo) → menú Resetear contacto de prueba.
+ */
+function resetearContactoPrueba() {
+  const ui = SpreadsheetApp.getUi();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  let email = "";
+
+  if (sheet.getName() === CONFIG.INVITES_SHEET_NAME) {
+    const row = sheet.getActiveRange().getRow();
+    if (row > 1) {
+      email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
+    }
+  }
+
+  if (!email) {
+    const prompt = ui.prompt(
+      "Resetear contacto de prueba",
+      "Escribe el correo a resetear:",
+      ui.ButtonSet.OK_CANCEL,
+    );
+    if (prompt.getSelectedButton() !== ui.Button.OK) return;
+    email = normalizeEmail(prompt.getResponseText());
+  }
+
+  if (!email) {
+    ui.alert("Necesitas un correo válido.");
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Resetear " + email + "?",
+    "Se limpia Invitados, se borra de Registros, se cancelan jobs y se resetea Brevo para poder reinvitar y registrarte de nuevo.",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  try {
+    resetTestContactSheets_(email);
+    resetTestContactBrevo_(email);
+    ui.alert(
+      "Listo: " +
+        email +
+        " quedó en pendiente.\n\nPara visitar de nuevo sin caché: ventana privada o borra sessionStorage de c4c7ops.co.\nLuego: Estado pendiente → Procesar invitados (o edita Correo).",
+    );
+  } catch (error) {
+    ui.alert(
+      "Error al resetear: " +
+        (error && error.message ? error.message : "desconocido"),
+    );
+  }
+}
+
+function resetTestContactSheets_(email) {
+  const normalized = normalizeEmail(email);
+  const now = new Date().toISOString();
+
+  // Invitados → pendiente, sin fecha de invitación
+  const invites = getInvitesSheet();
+  const inviteRow = findInviteeRow_(invites, normalized);
+  if (inviteRow) {
+    invites.getRange(inviteRow, INV.STATUS).setValue("pendiente");
+    invites.getRange(inviteRow, INV.INVITED_AT).setValue("");
+    invites.getRange(inviteRow, INV.UPDATED_AT).setValue(now);
+  }
+
+  // Registros → borrar fila
+  const registros = getSheet();
+  const attendee = findByEmailInSheet(registros, normalized);
+  if (attendee && attendee.rowNumber) {
+    registros.deleteRow(attendee.rowNumber);
+  }
+
+  // Cola → cancelar pendientes
+  cancelEmailJobs(normalized, []);
+}
+
+function resetTestContactBrevo_(email) {
+  const response = UrlFetchApp.fetch(CONFIG.RESET_TEST_WEBHOOK_URL, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      secret: CONFIG.SECRET,
+      email: normalizeEmail(email),
+    }),
+    muteHttpExceptions: true,
+  });
+
+  const statusCode = response.getResponseCode();
+  const body = response.getContentText();
+  if (statusCode < 200 || statusCode >= 300) {
+    throw new Error(
+      "Webhook reset falló (" + statusCode + ")" + (body ? " · " + body : ""),
+    );
   }
 }
 
