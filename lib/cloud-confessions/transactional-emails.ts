@@ -191,17 +191,19 @@ export async function sendCloudCoffeeVisitedEmail(input: {
 }): Promise<{ sent: boolean; error?: string }> {
   const name = input.firstName.trim() || "hola";
   const href = landingUrl(input.firstName, input.lastName ?? "", input.email);
-  const subject = "Te faltó un paso para Cloud & Coffee";
-  const preview = "Entraste a la página · completa tu solicitud en un minuto.";
+  const subject = "¿Seguimos con Cloud & Coffee?";
+  const preview =
+    "Si quieres unirte el 30, aquí puedes retomar tu solicitud cuando quieras.";
   const html = wrapEmail({
     preview,
     title: subject,
     bodyHtml: `
-      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Terminamos tu solicitud?</h1>
+      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Te guardamos el hilo?</h1>
       <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Vimos que entraste a la página de Cloud &amp; Coffee.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si todavía quieres unirte el 30 de julio — café, desayuno y toda la energía para el Summit —, solo falta completar la solicitud.</p>
-      ${ctaButton(href, "Continuar mi solicitud")}
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Te dejamos por acá el acceso a Cloud &amp; Coffee por si quieres retomar cuando te quede mejor.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Es el <strong style="color:#fff;">jueves 30 de julio</strong>, de <strong style="color:#fff;">7:00 a 9:00 a. m.</strong>, cerca al Ágora: café, desayuno y toda la energía para el Summit.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si te interesa, solo falta completar la solicitud. Sin presión.</p>
+      ${ctaButton(href, "Retomar solicitud")}
     `,
   });
 

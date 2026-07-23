@@ -129,15 +129,16 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Si ya está en lista 13, 14 o 15",
       "Si completa el registro antes del envío",
     ],
-    subject: "Te faltó un paso para Cloud & Coffee",
-    previewText: "Entraste a la página · completa tu solicitud en un minuto.",
-    ctaLabel: "Continuar mi solicitud",
+    subject: "¿Seguimos con Cloud & Coffee?",
+    previewText:
+      "Si quieres unirte el 30, aquí puedes retomar tu solicitud cuando quieras.",
+    ctaLabel: "Retomar solicitud",
     ctaUrl: cloudConfessionsEmailConfig.personalizedLandingUrl,
     body: [
       "Hola {{ contact.NOMBRE }},",
-      "Vimos que entraste a la página de Cloud & Coffee.",
-      "Si todavía quieres unirte el 30 de julio — café, desayuno y toda la energía para el Summit —, solo falta completar la solicitud.",
-      "Cuando envíes tus datos, revisamos tu cupo y te confirmamos.",
+      "Te dejamos por acá el acceso a Cloud & Coffee por si quieres retomar cuando te quede mejor.",
+      "Es el jueves 30 de julio, de 7:00 a 9:00 a. m., cerca al Ágora: café, desayuno y toda la energía para el Summit.",
+      "Si te interesa, solo falta completar la solicitud. Sin presión.",
     ],
   },
   {
