@@ -6,6 +6,7 @@ import {
   upsertCloudConfessionsContact,
 } from "@/lib/cloud-confessions/brevo";
 import { onCloudCoffeeApproved } from "@/lib/cloud-confessions/email-flow";
+import { updateCloudCoffeeInviteeStatus } from "@/lib/cloud-confessions/email-queue";
 import {
   findCloudConfessionsAttendeeByEmail,
   isCloudConfessionsGoogleSheetsConfigured,
@@ -125,6 +126,11 @@ export async function processCloudConfessionsApprovalByEmail(
     ...(qrToken ? { qrToken } : {}),
     updatedAt: now,
   });
+
+  void updateCloudCoffeeInviteeStatus(
+    attendee.email,
+    status === "approved" ? "aprobado" : "rechazado",
+  );
 
   let emailSent = false;
   if (status === "approved" && qrToken) {

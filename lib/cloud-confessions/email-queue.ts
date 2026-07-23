@@ -18,7 +18,18 @@ type AppsScriptAction =
   | "completeEmailJob"
   | "cancelEmailJobs"
   | "upsertInvitee"
-  | "markInviteeInvited";
+  | "markInviteeInvited"
+  | "updateInviteeStatus";
+
+export type CloudCoffeeInviteeSheetStatus =
+  | "pendiente"
+  | "invitado"
+  | "visitó"
+  | "incompleto"
+  | "registrado"
+  | "aprobado"
+  | "rechazado"
+  | "error";
 
 interface AppsScriptResponse {
   success?: boolean;
@@ -136,4 +147,23 @@ export async function markCloudCoffeeInviteeInvited(email: string): Promise<void
     email: email.trim().toLowerCase(),
     invitedAt: new Date().toISOString(),
   });
+}
+
+export async function updateCloudCoffeeInviteeStatus(
+  email: string,
+  status: CloudCoffeeInviteeSheetStatus,
+): Promise<void> {
+  if (!isCloudCoffeeJobsConfigured()) return;
+  try {
+    await callJobsAppsScript("updateInviteeStatus", {
+      email: email.trim().toLowerCase(),
+      status,
+    });
+  } catch (error) {
+    console.error("Cloud & Coffee invitee status sync failed", {
+      email: email.trim().toLowerCase(),
+      status,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
 }

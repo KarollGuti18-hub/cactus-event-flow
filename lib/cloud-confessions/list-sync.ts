@@ -6,6 +6,10 @@ import {
   upsertCloudConfessionsContact,
   type CloudConfessionsListIds,
 } from "@/lib/cloud-confessions/brevo";
+import {
+  updateCloudCoffeeInviteeStatus,
+  type CloudCoffeeInviteeSheetStatus,
+} from "@/lib/cloud-confessions/email-queue";
 
 export type CloudCoffeeFunnelStage =
   | "invited"
@@ -13,6 +17,23 @@ export type CloudCoffeeFunnelStage =
   | "incomplete"
   | "registered"
   | "approved";
+
+function sheetStatusForStage(
+  stage: CloudCoffeeFunnelStage,
+): CloudCoffeeInviteeSheetStatus {
+  switch (stage) {
+    case "invited":
+      return "invitado";
+    case "visited":
+      return "visitó";
+    case "incomplete":
+      return "incompleto";
+    case "registered":
+      return "registrado";
+    case "approved":
+      return "aprobado";
+  }
+}
 
 function stageListId(
   listIds: CloudConfessionsListIds,
@@ -84,6 +105,8 @@ export async function moveCloudCoffeeContactToStage(input: {
   if (!add.ok) {
     return { ok: false, error: `Brevo add-to-list falló (${add.status})` };
   }
+
+  void updateCloudCoffeeInviteeStatus(email, sheetStatusForStage(input.stage));
 
   return { ok: true };
 }

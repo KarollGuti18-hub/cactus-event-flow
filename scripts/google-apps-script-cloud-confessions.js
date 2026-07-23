@@ -12,11 +12,14 @@
  * 8. Ejecutar una vez ensureCalendarEvent() para crear el evento maestro.
  * 9. Ejecutar una vez ensureInvitesAndJobsSheets() para crear hojas Invitados + ColaEmails.
  *
- * Hoja "Invitados": al poner un email (o menú Procesar invitados), llama al webhook de invitación.
- * Hoja "ColaEmails": cola de correos diferidos (cron de Vercel).
+ * Hoja "Invitados" (columnas):
+ *   Nombre | Apellido | Correo | Estado | Empresa | Cargo | Invitado el | Actualizado
+ * Al escribir/pegar un Correo (o menú Procesar invitados), envía la invitación.
+ * Estado se actualiza solo: pendiente → invitado → visitó → incompleto → registrado → aprobado/rechazado.
  *
- * Al editar estado a "aprobado": genera QR vía webhook e invita al Calendar.
- * Al editar estado a "rechazado": actualiza Brevo/Sheets y retira la invitación.
+ * Hoja "ColaEmails": cola de correos diferidos (cron externo / Vercel).
+ *
+ * Hoja "Registros": al editar estado a "aprobado"/"rechazado" → QR + Calendar.
  */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
@@ -57,14 +60,25 @@ const CONFIG = {
     "actualizado_at",
   ],
   INVITE_HEADERS: [
-    "email",
-    "nombre",
-    "apellido",
-    "empresa",
-    "cargo",
-    "estado",
-    "invitado_at",
-    "actualizado_at",
+    "Nombre",
+    "Apellido",
+    "Correo",
+    "Estado",
+    "Empresa",
+    "Cargo",
+    "Invitado el",
+    "Actualizado",
+  ],
+  /** Valores de Estado en Invitados (dropdown + sync del funnel). */
+  INVITE_STATUS_VALUES: [
+    "pendiente",
+    "invitado",
+    "visitó",
+    "incompleto",
+    "registrado",
+    "aprobado",
+    "rechazado",
+    "error",
   ],
   JOB_HEADERS: [
     "id",
@@ -160,6 +174,9 @@ function doPost(e) {
       case "markInviteeInvited":
         markInviteeInvited(data.email, data.invitedAt);
         return jsonResponse({ success: true });
+      case "updateInviteeStatus":
+        updateInviteeStatus(data.email, data.status);
+        return jsonResponse({ success: true });
       default:
         return jsonResponse({ success: false, error: "Acción no válida" });
     }
@@ -181,8 +198,8 @@ function onEdit(e) {
   if (rowNumber === 1) return;
 
   if (sheetName === CONFIG.INVITES_SHEET_NAME) {
-    // Columna email (1): al pegar/escribir un correo, invita.
-    if (e.range.getColumn() === 1) {
+    // Columna Correo (3): al pegar/escribir un correo, invita.
+    if (e.range.getColumn() === INV.EMAIL) {
       try {
         processInviteRow_(rowNumber);
       } catch (error) {
@@ -681,14 +698,24 @@ function jsonResponse(payload) {
 }
 
 const INV = {
-  EMAIL: 1,
-  FIRST_NAME: 2,
-  LAST_NAME: 3,
-  COMPANY: 4,
-  JOB_TITLE: 5,
-  STATUS: 6,
+  FIRST_NAME: 1,
+  LAST_NAME: 2,
+  EMAIL: 3,
+  STATUS: 4,
+  COMPANY: 5,
+  JOB_TITLE: 6,
   INVITED_AT: 7,
   UPDATED_AT: 8,
+};
+
+/** Estados en los que ya no se reenvía la invitación automática. */
+const INVITE_DONE_STATUSES = {
+  invitado: true,
+  "visitó": true,
+  incompleto: true,
+  registrado: true,
+  aprobado: true,
+  rechazado: true,
 };
 
 const JOB = {
@@ -703,12 +730,114 @@ const JOB = {
   ERROR: 9,
 };
 
+function normalizeInviteStatus_(value) {
+  const raw = String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  if (!raw || raw === "pendiente") return "pendiente";
+  if (raw === "invitado" || raw === "invited") return "invitado";
+  if (raw === "visito" || raw === "visited" || raw === "visitado") return "visitó";
+  if (raw === "incompleto" || raw === "incomplete") return "incompleto";
+  if (
+    raw === "registrado" ||
+    raw === "registered" ||
+    raw === "pendiente_aprobacion" ||
+    raw === "pending_approval"
+  ) {
+    return "registrado";
+  }
+  if (raw === "aprobado" || raw === "approved") return "aprobado";
+  if (raw === "rechazado" || raw === "rejected") return "rechazado";
+  if (raw === "error" || raw === "failed") return "error";
+  return String(value || "").trim() || "pendiente";
+}
+
 function ensureInvitesAndJobsSheets() {
-  getInvitesSheet();
+  const invites = getInvitesSheet();
   getJobsSheet();
+  formatInvitesSheet_(invites);
   SpreadsheetApp.getUi().alert(
-    "Hojas listas: Invitados y ColaEmails. Pega emails en Invitados (columna A) para invitar.",
+    "Hojas listas: Invitados y ColaEmails.\n\nEn Invitados escribe Nombre, Apellido y Correo. Al pegar el Correo se envía la invitación y Estado pasa a \"invitado\".",
   );
+}
+
+function formatInvitesSheet_(sheet) {
+  const cols = CONFIG.INVITE_HEADERS.length;
+  const header = sheet.getRange(1, 1, 1, cols);
+  header.setFontWeight("bold");
+  header.setBackground("#151518");
+  header.setFontColor("#9ab83a");
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(INV.FIRST_NAME, 140);
+  sheet.setColumnWidth(INV.LAST_NAME, 140);
+  sheet.setColumnWidth(INV.EMAIL, 240);
+  sheet.setColumnWidth(INV.STATUS, 120);
+  sheet.setColumnWidth(INV.COMPANY, 160);
+  sheet.setColumnWidth(INV.JOB_TITLE, 140);
+  sheet.setColumnWidth(INV.INVITED_AT, 180);
+  sheet.setColumnWidth(INV.UPDATED_AT, 180);
+
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(CONFIG.INVITE_STATUS_VALUES, true)
+    .setAllowInvalid(false)
+    .setHelpText("Estado del invitado en el funnel Cloud & Coffee")
+    .build();
+  sheet.getRange(2, INV.STATUS, 1000, 1).setDataValidation(rule);
+}
+
+function migrateInvitesSheetIfNeeded_(sheet) {
+  const lastCol = Math.max(sheet.getLastColumn(), CONFIG.INVITE_HEADERS.length);
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(function (v) {
+    return String(v || "").trim();
+  });
+  const h0 = headers[0].toLowerCase();
+  const h2 = String(headers[2] || "").toLowerCase();
+
+  // Ya está en el layout nuevo.
+  if (headers[0] === "Nombre" && headers[2] === "Correo" && headers[3] === "Estado") {
+    return;
+  }
+
+  // Layout viejo: email | nombre | apellido | empresa | cargo | estado | ...
+  if (h0 === "email" || (h0 === "correo" && h2 !== "correo" && headers[1] === "nombre")) {
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 2) {
+      const width = Math.max(headers.length, 8);
+      const data = sheet.getRange(2, 1, lastRow, width).getValues();
+      const remapped = data.map(function (row) {
+        const email = row[0];
+        const nombre = row[1];
+        const apellido = row[2];
+        const empresa = row[3];
+        const cargo = row[4];
+        const estado = normalizeInviteStatus_(row[5]);
+        const invitedAt = row[6] || "";
+        const updatedAt = row[7] || "";
+        return [
+          nombre,
+          apellido,
+          email,
+          estado === "pendiente" && email ? "pendiente" : estado,
+          empresa,
+          cargo,
+          invitedAt,
+          updatedAt,
+        ];
+      });
+      sheet.clear();
+      sheet
+        .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
+        .setValues([CONFIG.INVITE_HEADERS]);
+      sheet.getRange(2, 1, remapped.length + 1, CONFIG.INVITE_HEADERS.length).setValues(remapped);
+      return;
+    }
+  }
+
+  sheet
+    .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
+    .setValues([CONFIG.INVITE_HEADERS]);
 }
 
 function getInvitesSheet() {
@@ -717,6 +846,8 @@ function getInvitesSheet() {
   if (!sheet) {
     sheet = spreadsheet.insertSheet(CONFIG.INVITES_SHEET_NAME);
   }
+  migrateInvitesSheetIfNeeded_(sheet);
+
   const headers = sheet
     .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
     .getValues()[0];
@@ -728,6 +859,7 @@ function getInvitesSheet() {
       .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
       .setValues([CONFIG.INVITE_HEADERS]);
   }
+  formatInvitesSheet_(sheet);
   return sheet;
 }
 
@@ -756,40 +888,62 @@ function processInviteRow_(rowNumber) {
   const email = normalizeEmail(sheet.getRange(rowNumber, INV.EMAIL).getValue());
   if (!email) return;
 
-  const estado = String(sheet.getRange(rowNumber, INV.STATUS).getValue() || "")
-    .trim()
-    .toLowerCase();
-  if (estado === "invitado") return;
+  const estado = normalizeInviteStatus_(
+    sheet.getRange(rowNumber, INV.STATUS).getValue(),
+  );
+  if (INVITE_DONE_STATUSES[estado]) return;
 
-  const response = UrlFetchApp.fetch(CONFIG.INVITE_WEBHOOK_URL, {
-    method: "post",
-    contentType: "application/json",
-    payload: JSON.stringify({
-      secret: CONFIG.SECRET,
-      email: email,
-      nombre: String(sheet.getRange(rowNumber, INV.FIRST_NAME).getValue() || ""),
-      apellido: String(sheet.getRange(rowNumber, INV.LAST_NAME).getValue() || ""),
-      empresa: String(sheet.getRange(rowNumber, INV.COMPANY).getValue() || ""),
-      cargo: String(sheet.getRange(rowNumber, INV.JOB_TITLE).getValue() || ""),
-    }),
-    muteHttpExceptions: true,
-  });
-
-  const statusCode = response.getResponseCode();
-  const body = response.getContentText();
-  if (statusCode < 200 || statusCode >= 300) {
-    throw new Error(
-      "Webhook invite falló (" +
-        statusCode +
-        ")" +
-        (body ? " · " + body : ""),
-    );
+  // Si ya hubo envío (timestamp) pero Estado quedó en error, no reenviar.
+  const alreadyInvitedAt = String(
+    sheet.getRange(rowNumber, INV.INVITED_AT).getValue() || "",
+  ).trim();
+  if (alreadyInvitedAt) {
+    sheet.getRange(rowNumber, INV.STATUS).setValue("invitado");
+    sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(new Date().toISOString());
+    return;
   }
 
-  const now = new Date().toISOString();
-  sheet.getRange(rowNumber, INV.STATUS).setValue("invitado");
-  sheet.getRange(rowNumber, INV.INVITED_AT).setValue(now);
-  sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(now);
+  if (!String(sheet.getRange(rowNumber, INV.STATUS).getValue() || "").trim()) {
+    sheet.getRange(rowNumber, INV.STATUS).setValue("pendiente");
+  }
+
+  try {
+    const response = UrlFetchApp.fetch(CONFIG.INVITE_WEBHOOK_URL, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: CONFIG.SECRET,
+        email: email,
+        nombre: String(sheet.getRange(rowNumber, INV.FIRST_NAME).getValue() || ""),
+        apellido: String(sheet.getRange(rowNumber, INV.LAST_NAME).getValue() || ""),
+        empresa: String(sheet.getRange(rowNumber, INV.COMPANY).getValue() || ""),
+        cargo: String(sheet.getRange(rowNumber, INV.JOB_TITLE).getValue() || ""),
+      }),
+      muteHttpExceptions: true,
+    });
+
+    const statusCode = response.getResponseCode();
+    const body = response.getContentText();
+    if (statusCode < 200 || statusCode >= 300) {
+      sheet.getRange(rowNumber, INV.STATUS).setValue("error");
+      sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(new Date().toISOString());
+      throw new Error(
+        "Webhook invite falló (" +
+          statusCode +
+          ")" +
+          (body ? " · " + body : ""),
+      );
+    }
+
+    const now = new Date().toISOString();
+    sheet.getRange(rowNumber, INV.STATUS).setValue("invitado");
+    sheet.getRange(rowNumber, INV.INVITED_AT).setValue(now);
+    sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(now);
+  } catch (error) {
+    sheet.getRange(rowNumber, INV.STATUS).setValue("error");
+    sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(new Date().toISOString());
+    throw error;
+  }
 }
 
 function procesarInvitadosPendientes() {
@@ -805,10 +959,8 @@ function procesarInvitadosPendientes() {
   for (let row = 2; row <= lastRow; row += 1) {
     const email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
     if (!email) continue;
-    const estado = String(sheet.getRange(row, INV.STATUS).getValue() || "")
-      .trim()
-      .toLowerCase();
-    if (estado === "invitado") continue;
+    const estado = normalizeInviteStatus_(sheet.getRange(row, INV.STATUS).getValue());
+    if (INVITE_DONE_STATUSES[estado]) continue;
     try {
       processInviteRow_(row);
       ok += 1;
@@ -822,32 +974,32 @@ function procesarInvitadosPendientes() {
   );
 }
 
+function findInviteeRow_(sheet, email) {
+  const normalized = normalizeEmail(email);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2 || !normalized) return 0;
+  const emails = sheet.getRange(2, INV.EMAIL, lastRow, INV.EMAIL).getValues();
+  for (let i = 0; i < emails.length; i += 1) {
+    if (normalizeEmail(emails[i][0]) === normalized) return i + 2;
+  }
+  return 0;
+}
+
 function upsertInvitee(data) {
   const sheet = getInvitesSheet();
   const email = normalizeEmail(data.email);
   if (!email) return;
 
-  const lastRow = sheet.getLastRow();
-  let row = 0;
-  if (lastRow >= 2) {
-    const emails = sheet.getRange(2, INV.EMAIL, lastRow, INV.EMAIL).getValues();
-    for (let i = 0; i < emails.length; i += 1) {
-      if (normalizeEmail(emails[i][0]) === email) {
-        row = i + 2;
-        break;
-      }
-    }
-  }
-
+  let row = findInviteeRow_(sheet, email);
   const now = new Date().toISOString();
   if (!row) {
     sheet.appendRow([
-      email,
       safeText(data.firstName),
       safeText(data.lastName),
+      email,
+      "pendiente",
       safeText(data.company),
       safeText(data.jobTitle),
-      "",
       "",
       now,
     ]);
@@ -862,19 +1014,22 @@ function upsertInvitee(data) {
 }
 
 function markInviteeInvited(email, invitedAt) {
-  const sheet = getInvitesSheet();
-  const normalized = normalizeEmail(email);
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return;
+  updateInviteeStatus(email, "invitado", invitedAt);
+}
 
-  const emails = sheet.getRange(2, INV.EMAIL, lastRow, INV.EMAIL).getValues();
-  for (let i = 0; i < emails.length; i += 1) {
-    if (normalizeEmail(emails[i][0]) === normalized) {
-      const row = i + 2;
-      sheet.getRange(row, INV.STATUS).setValue("invitado");
-      sheet.getRange(row, INV.INVITED_AT).setValue(invitedAt || new Date().toISOString());
-      sheet.getRange(row, INV.UPDATED_AT).setValue(new Date().toISOString());
-      return;
+function updateInviteeStatus(email, status, invitedAt) {
+  const sheet = getInvitesSheet();
+  const row = findInviteeRow_(sheet, email);
+  if (!row) return;
+
+  const normalized = normalizeInviteStatus_(status);
+  const now = new Date().toISOString();
+  sheet.getRange(row, INV.STATUS).setValue(normalized);
+  sheet.getRange(row, INV.UPDATED_AT).setValue(now);
+  if (normalized === "invitado") {
+    const currentInvited = sheet.getRange(row, INV.INVITED_AT).getValue();
+    if (!currentInvited || invitedAt) {
+      sheet.getRange(row, INV.INVITED_AT).setValue(invitedAt || now);
     }
   }
 }

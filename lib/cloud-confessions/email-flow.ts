@@ -104,13 +104,29 @@ export async function processCloudCoffeeInvite(input: {
     return { ok: false, error: emailResult.error ?? "No se pudo enviar la invitación" };
   }
 
-  await cancelCloudCoffeeEmailJobs(email, FUNNEL_FOLLOWUP_JOBS);
-  await enqueueCloudCoffeeEmailJob({
-    email,
-    jobType: "followup_1",
-    runAt: addMs(new Date(), FOLLOWUP_1_DELAY_MS),
-  });
-  await markCloudCoffeeInviteeInvited(email);
+  // El correo ya salió: marcamos invitado aunque la cola falle (no devolver error al Sheet).
+  try {
+    await markCloudCoffeeInviteeInvited(email);
+  } catch (error) {
+    console.error("Cloud & Coffee markInviteeInvited failed after send", {
+      email,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
+
+  try {
+    await cancelCloudCoffeeEmailJobs(email, FUNNEL_FOLLOWUP_JOBS);
+    await enqueueCloudCoffeeEmailJob({
+      email,
+      jobType: "followup_1",
+      runAt: addMs(new Date(), FOLLOWUP_1_DELAY_MS),
+    });
+  } catch (error) {
+    console.error("Cloud & Coffee invite follow-up enqueue failed", {
+      email,
+      message: error instanceof Error ? error.message : "unknown",
+    });
+  }
 
   return { ok: true };
 }
