@@ -156,6 +156,7 @@ export async function POST(request: Request) {
           registeredAt,
         }),
       },
+      listIds: [listIds.registered],
       unlinkListIds: [
         listIds.invited,
         listIds.visited,

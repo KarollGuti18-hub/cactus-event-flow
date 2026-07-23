@@ -259,6 +259,29 @@ export async function isBrevoAlreadyInListResponse(
   const body = (await response.clone().json().catch(() => ({}))) as {
     message?: string;
   };
-  const message = typeof body.message === "string" ? body.message : "";
-  return /already|exist|duplicate|in list/i.test(message);
+  const message = typeof body.message === "string" ? body.message.toLowerCase() : "";
+  // Cuidado: NO usar /exist/ suelto — también matchea "does not exist".
+  return (
+    message.includes("already in list") ||
+    message.includes("already exists") ||
+    message.includes("duplicate") ||
+    message.includes("ya está en la lista") ||
+    message.includes("ya esta en la lista")
+  );
+}
+
+export async function isBrevoContactMissingForListResponse(
+  response: Response,
+): Promise<boolean> {
+  if (response.ok || response.status !== 400) return false;
+  const body = (await response.clone().json().catch(() => ({}))) as {
+    message?: string;
+  };
+  const message = typeof body.message === "string" ? body.message.toLowerCase() : "";
+  return (
+    message.includes("does not exist") ||
+    message.includes("not exist") ||
+    message.includes("no existe") ||
+    message.includes("unable to add")
+  );
 }

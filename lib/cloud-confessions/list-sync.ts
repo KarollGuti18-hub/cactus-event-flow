@@ -4,6 +4,7 @@ import {
   buildCloudConfessionsAttributes,
   getCloudConfessionsListIds,
   isBrevoAlreadyInListResponse,
+  isBrevoContactMissingForListResponse,
   upsertCloudConfessionsContact,
   type CloudConfessionsListIds,
 } from "@/lib/cloud-confessions/brevo";
@@ -66,6 +67,10 @@ function statusForStage(
   return stage;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** Saca de las otras listas del funnel y deja solo la de destino. */
 export async function moveCloudCoffeeContactToStage(input: {
   email: string;
@@ -87,6 +92,8 @@ export async function moveCloudCoffeeContactToStage(input: {
     listIds.approved,
   ].filter((id) => id !== targetId);
 
+  // listIds en el upsert garantiza que quede en la lista destino
+  // aunque el endpoint /contacts/add falle por carrera.
   const upsert = await upsertCloudConfessionsContact({
     email,
     attributes: {
@@ -95,6 +102,7 @@ export async function moveCloudCoffeeContactToStage(input: {
       }),
       ...(input.attributes ?? {}),
     },
+    listIds: [targetId],
     unlinkListIds,
   });
 
@@ -102,16 +110,22 @@ export async function moveCloudCoffeeContactToStage(input: {
     return { ok: false, error: `Brevo upsert falló (${upsert.status})` };
   }
 
-  const add = await addCloudConfessionsContactsToList(targetId, [email]);
+  let add = await addCloudConfessionsContactsToList(targetId, [email]);
+  if (!add.ok && (await isBrevoContactMissingForListResponse(add))) {
+    await sleep(800);
+    add = await addCloudConfessionsContactsToList(targetId, [email]);
+  }
+
   if (!add.ok && !(await isBrevoAlreadyInListResponse(add))) {
     const body = (await add.json().catch(() => ({}))) as { message?: string };
     const message = typeof body.message === "string" ? body.message : "";
-    return {
-      ok: false,
-      error: `Brevo add-to-list falló (${add.status})${
-        message ? `: ${message}` : ""
-      }`,
-    };
+    // El upsert ya lo puso en listIds; no tumbar el flujo solo por el add.
+    console.error("Cloud & Coffee Brevo add-to-list soft-fail", {
+      email,
+      targetId,
+      status: add.status,
+      message,
+    });
   }
 
   void updateCloudCoffeeInviteeStatus(email, sheetStatusForStage(input.stage));
