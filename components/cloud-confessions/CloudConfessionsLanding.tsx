@@ -272,23 +272,23 @@ export default function CloudConfessionsLanding() {
   ];
 
   return (
-    <div className="min-h-screen overflow-x-clip bg-cactus-bg pb-20 text-white lg:pb-0">
-      <div className="pointer-events-none fixed inset-0" aria-hidden="true">
+    <div className="min-h-screen overflow-x-hidden bg-cactus-bg pb-20 text-white lg:pb-0">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden="true">
         <div className="absolute inset-0 grid-pattern opacity-60" />
         <div className="absolute -top-48 left-[38%] h-[38rem] w-[38rem] rounded-full bg-cactus-green/10 blur-[150px]" />
         <div className="absolute right-[-12rem] top-[45rem] h-[28rem] w-[28rem] rounded-full bg-cactus-green/6 blur-[130px]" />
       </div>
 
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
-          <a href="#inicio" aria-label="Ir al inicio" className="flex shrink-0 items-center">
+        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:gap-6 sm:px-8">
+          <a href="#inicio" aria-label="Ir al inicio" className="flex min-w-0 shrink items-center">
             <Image
               src="/logo-c4c7ops-white.png"
               alt="C4C7OPS"
               width={168}
               height={44}
               priority
-              className="h-8 w-auto object-contain sm:h-9"
+              className="h-8 w-auto max-w-[140px] object-contain sm:h-9 sm:max-w-none"
             />
           </a>
 
@@ -307,96 +307,96 @@ export default function CloudConfessionsLanding() {
         </div>
       </header>
 
-      <main
+      <section
         id="inicio"
-        className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 xl:gap-x-16"
+        className="section-anchor relative mt-20 overflow-hidden bg-[#020b07] pb-14 pt-6 sm:pb-16 sm:pt-10 lg:min-h-[calc(100svh-5rem)] lg:pb-20 lg:pt-8"
       >
-        <section className="relative left-1/2 flex w-screen -translate-x-1/2 flex-col justify-start overflow-x-clip bg-[#020b07] pb-14 pt-6 sm:pt-10 sm:pb-16 lg:col-span-2 lg:row-start-1 lg:min-h-[calc(100svh-5rem)] lg:overflow-hidden lg:pb-20 lg:pt-8">
-          <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <div className="absolute inset-y-0 right-0 hidden w-[90%] sm:block lg:w-[96%]">
-              <Image
-                src="/cloud-confessions-banner.jpg"
-                alt=""
-                fill
-                priority
-                quality={90}
-                sizes="(max-width: 1024px) 90vw, 96vw"
-                className="object-contain object-top"
-              />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] from-[0%] via-[#020b07] via-[52%] to-transparent to-[64%] max-sm:via-[#020b07] max-sm:to-[#020b07]" />
-            <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="absolute inset-y-0 right-0 hidden w-[min(90%,42rem)] md:block lg:w-[min(96%,52rem)]">
+            <Image
+              src="/cloud-confessions-banner.jpg"
+              alt=""
+              fill
+              priority
+              quality={90}
+              sizes="(max-width: 768px) 0px, (max-width: 1024px) 42rem, 52rem"
+              className="object-contain object-right-top"
+            />
           </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] from-[0%] via-[#020b07] via-[48%] to-transparent to-[72%] max-md:via-[#020b07] max-md:to-[#020b07]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
+        </div>
 
-          <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
-            <div className="max-w-3xl">
-              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-cactus-green sm:px-4 sm:text-[11px] sm:tracking-[0.18em]">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cactus-green" />
-                <span className="truncate">{cloudConfessionsCopy.invitationBadge}</span>
-              </div>
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
+          <div className="max-w-full sm:max-w-3xl">
+            <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-cactus-green sm:px-4 sm:text-[11px] sm:tracking-[0.18em]">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cactus-green" />
+              <span className="truncate">{cloudConfessionsCopy.invitationBadge}</span>
+            </div>
 
-              <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42 sm:mt-8 sm:text-xs sm:tracking-[0.24em]">
-                {cloudConfessionsCopy.summitContext}
-              </p>
-              <h1 className="mt-4 text-[2.75rem] font-extrabold leading-[0.92] tracking-[-0.055em] sm:mt-5 sm:text-[5.3rem] sm:leading-[0.9] sm:tracking-[-0.065em] lg:text-[6.25rem]">
-                Cloud
-                <span className="block text-gradient-green">&amp; Coffee</span>
-              </h1>
-              <p className="mt-4 text-sm font-semibold uppercase tracking-[0.16em] text-white/55 sm:mt-5 sm:text-base sm:tracking-[0.18em]">
-                {cloudConfessionsConfig.tagline}
-              </p>
-              <p className="mt-2 text-xs font-medium tracking-[0.04em] text-white/40">
-                {cloudConfessionsConfig.hostedBy}
-              </p>
-              <p className="mt-6 max-w-2xl text-base leading-7 text-white/58 sm:mt-8 sm:text-xl sm:leading-9">
-                {cloudConfessionsCopy.heroLead}
-              </p>
+            <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/42 sm:mt-8 sm:text-xs sm:tracking-[0.24em]">
+              {cloudConfessionsCopy.summitContext}
+            </p>
+            <h1 className="mt-4 max-w-full text-[2.4rem] font-extrabold leading-[0.95] tracking-[-0.05em] sm:mt-5 sm:text-[4.25rem] sm:leading-[0.92] sm:tracking-[-0.06em] md:text-[5.3rem] md:leading-[0.9] lg:text-[6.25rem]">
+              Cloud
+              <span className="block text-gradient-green">&amp; Coffee</span>
+            </h1>
+            <p className="mt-4 text-sm font-semibold uppercase tracking-[0.14em] text-white/55 sm:mt-5 sm:text-base sm:tracking-[0.18em]">
+              {cloudConfessionsConfig.tagline}
+            </p>
+            <p className="mt-2 text-xs font-medium tracking-[0.04em] text-white/40">
+              {cloudConfessionsConfig.hostedBy}
+            </p>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-white/58 sm:mt-8 sm:text-xl sm:leading-9">
+              {cloudConfessionsCopy.heroLead}
+            </p>
 
-              <div className="mt-8 grid max-w-2xl gap-3 sm:mt-10 sm:grid-cols-3">
-                {eventFacts.map((fact) => (
-                  <div
-                    key={fact.label}
-                    className="group rounded-2xl border border-white/9 bg-white/[0.035] p-4 backdrop-blur-sm transition hover:border-cactus-green/25 hover:bg-white/[0.055]"
-                  >
-                    <span className="text-cactus-green">
-                      <DetailIcon type={fact.icon} />
-                    </span>
-                    <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white/32">
-                      {fact.label}
-                    </p>
-                    <p className="mt-1.5 text-sm font-semibold leading-5 text-white/75">
-                      {fact.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-col items-start gap-3 sm:mt-12 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-3">
-                <a
-                  href="#registro"
-                  className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
+            <div className="mt-8 grid max-w-2xl gap-3 sm:mt-10 sm:grid-cols-3">
+              {eventFacts.map((fact) => (
+                <div
+                  key={fact.label}
+                  className="group min-w-0 rounded-2xl border border-white/9 bg-white/[0.035] p-4 backdrop-blur-sm transition hover:border-cactus-green/25 hover:bg-white/[0.055]"
                 >
-                  {cloudConfessionsConfig.ctaLabel}
-                  <span aria-hidden="true">→</span>
-                </a>
-                <p className="max-w-[16rem] text-[11px] uppercase leading-4 tracking-[0.12em] text-white/32 sm:max-w-none sm:text-xs sm:tracking-[0.16em]">
-                  {cloudConfessionsConfig.limitedSpots
-                    ? "Cupos limitados · Solicitud sujeta a aprobación"
-                    : "Cupos disponibles"}
-                </p>
-              </div>
+                  <span className="text-cactus-green">
+                    <DetailIcon type={fact.icon} />
+                  </span>
+                  <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.16em] text-white/32">
+                    {fact.label}
+                  </p>
+                  <p className="mt-1.5 text-sm font-semibold leading-5 text-white/75">
+                    {fact.value}
+                  </p>
+                </div>
+              ))}
             </div>
 
-            <div className="mt-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 sm:mt-20 lg:hidden">
-              <span className="h-px w-12 bg-cactus-green/50" />
-              Sigue explorando
+            <div className="mt-8 flex flex-col items-stretch gap-3 sm:mt-12 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-3">
+              <a
+                href="#registro"
+                className="inline-flex items-center justify-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light sm:justify-start"
+              >
+                {cloudConfessionsConfig.ctaLabel}
+                <span aria-hidden="true">→</span>
+              </a>
+              <p className="max-w-[18rem] text-[11px] uppercase leading-4 tracking-[0.1em] text-white/32 sm:max-w-none sm:text-xs sm:tracking-[0.16em]">
+                {cloudConfessionsConfig.limitedSpots
+                  ? "Cupos limitados · Solicitud sujeta a aprobación"
+                  : "Cupos disponibles"}
+              </p>
             </div>
           </div>
-        </section>
 
+          <div className="mt-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 sm:mt-20 lg:hidden">
+            <span className="h-px w-12 bg-cactus-green/50" />
+            Sigue explorando
+          </div>
+        </div>
+      </section>
+
+      <main className="relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-4 sm:px-8 sm:pt-6 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 lg:pt-8 xl:gap-x-16">
         <aside
           id="registro"
-          className="section-anchor relative z-10 mb-20 mt-4 self-start sm:mt-6 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-2 lg:row-span-3 lg:mb-0 lg:mt-2 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
+          className="section-anchor relative z-10 mb-12 self-start sm:mb-16 lg:sticky lg:top-28 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:mb-0 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto"
         >
           <div className="overflow-hidden rounded-[1.75rem] border border-cactus-green/20 bg-[#151518]/95 shadow-[0_30px_100px_rgba(0,0,0,0.5),0_0_0_1px_rgba(127,155,40,0.04)] backdrop-blur-2xl">
             <div className="border-b border-white/8 bg-gradient-to-br from-cactus-green/14 to-transparent px-6 py-5">
@@ -671,7 +671,7 @@ export default function CloudConfessionsLanding() {
           </div>
         </aside>
 
-        <section className="border-t border-white/8 pt-24 pb-20 sm:pt-28 sm:pb-24 lg:col-start-1 lg:row-start-2">
+        <section className="border-t border-white/8 pt-24 pb-20 sm:pt-28 sm:pb-24 lg:col-start-1 lg:row-start-1">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
             {cloudConfessionsCopy.aboutEyebrow}
           </p>
@@ -703,7 +703,7 @@ export default function CloudConfessionsLanding() {
           </div>
         </section>
 
-        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-3">
+        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-2">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
             {cloudConfessionsCopy.benefitsEyebrow}
           </p>
@@ -734,7 +734,7 @@ export default function CloudConfessionsLanding() {
           </div>
         </section>
 
-        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-4">
+        <section className="border-t border-white/8 py-20 sm:py-24 lg:col-start-1 lg:row-start-3">
           <div className="overflow-hidden rounded-[2rem] border border-white/9 bg-[#141417]">
             <div className="border-b border-white/8 px-7 py-7 sm:px-9">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-cactus-green">
