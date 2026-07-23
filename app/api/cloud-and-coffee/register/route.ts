@@ -7,6 +7,7 @@ import {
   buildCloudConfessionsAttributes,
   buildSharedContactAttributes,
   getCloudConfessionsListIds,
+  isBrevoAlreadyInListResponse,
   upsertCloudConfessionsContact,
 } from "@/lib/cloud-confessions/brevo";
 import {
@@ -184,7 +185,10 @@ export async function POST(request: Request) {
       [data.email],
     );
 
-    if (!addToListResponse.ok) {
+    if (
+      !addToListResponse.ok &&
+      !(await isBrevoAlreadyInListResponse(addToListResponse))
+    ) {
       const brevoError = await getBrevoErrorMessage(addToListResponse);
       console.error("Cloud Confession add to registered list failed", {
         status: addToListResponse.status,

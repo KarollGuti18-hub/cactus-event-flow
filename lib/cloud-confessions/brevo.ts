@@ -249,3 +249,16 @@ export async function addCloudConfessionsContactsToList(
     },
   );
 }
+
+/** Brevo responde 400 si el contacto ya está en la lista; para el funnel eso es OK. */
+export async function isBrevoAlreadyInListResponse(
+  response: Response,
+): Promise<boolean> {
+  if (response.ok) return false;
+  if (response.status !== 400) return false;
+  const body = (await response.clone().json().catch(() => ({}))) as {
+    message?: string;
+  };
+  const message = typeof body.message === "string" ? body.message : "";
+  return /already|exist|duplicate|in list/i.test(message);
+}

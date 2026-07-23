@@ -5,12 +5,13 @@
  * 1. Crear el archivo "Registros - Cloud & Coffee".
  * 2. Extensiones → Apps Script → pegar este archivo.
  * 3. Reemplazar SECRET y WEBHOOK_URL.
- * 4. Autorizar el script con la cuenta organizadora (Calendar).
+ * 4. Autorizar el script con ext-s@c4c7us.com (cuenta del Calendar).
  * 5. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
  * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
  * 7. Ejecutar una vez instalarActivadorOnEdit() (menú Cloud & Coffee o desde el editor).
  * 8. Ejecutar una vez ensureCalendarEvent() para crear el evento maestro.
  * 9. Ejecutar una vez ensureInvitesAndJobsSheets() para crear hojas Invitados + ColaEmails.
+ *    Al aprobar, se envía un correo con archivo .ics (no hace falta Calendar API avanzada).
  *
  * Hoja "Invitados" (columnas):
  *   Nombre | Apellido | Correo | Estado | Empresa | Cargo | Invitado el | Actualizado
@@ -258,8 +259,18 @@ function processStatusChange_(rowNumber, status) {
   const now = new Date().toISOString();
 
   if (status === "aprobado") {
-    inviteGuestToCalendar(email);
-    sheet.getRange(rowNumber, COL.CALENDAR_INVITED_AT).setValue(now);
+    try {
+      inviteGuestToCalendar(email);
+      sheet.getRange(rowNumber, COL.CALENDAR_INVITED_AT).setValue(now);
+    } catch (error) {
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        "Aprobado en web, pero el .ics falló: " +
+          (error && error.message ? error.message : "error") +
+          ". Usa menú → Reenviar Calendar.",
+        "Cloud & Coffee",
+        12,
+      );
+    }
   } else {
     removeGuestFromCalendar(email);
     sheet.getRange(rowNumber, COL.CALENDAR_INVITED_AT).setValue("");
@@ -275,11 +286,11 @@ function processStatusChange_(rowNumber, status) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("Cloud & Coffee")
-    .addItem("Instalar activador onEdit", "instalarActivadorOnEdit")
-    .addItem("Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
-    .addItem("Procesar invitados pendientes", "procesarInvitadosPendientes")
+    .addItem("1. Instalar activador", "instalarActivadorOnEdit")
+    .addItem("2. Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
+    .addItem("3. Procesar invitados", "procesarInvitadosPendientes")
+    .addItem("4. Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
-    .addItem("Crear/actualizar evento Calendar", "ensureCalendarEvent")
     .addToUi();
 }
 
@@ -612,7 +623,14 @@ function listNeedingProcessing() {
 }
 
 function getOrganizerCalendar() {
-  // Autorizar el Apps Script con ext-s@c4c7us.com (cuenta Google del Calendar).
+  // Debe autorizarse el Apps Script con ext-s@c4c7us.com.
+  // Preferimos el calendario de esa cuenta; si no, el default de quien autorizó.
+  try {
+    const byId = CalendarApp.getCalendarById(CONFIG.ORGANIZER_EMAIL);
+    if (byId) return byId;
+  } catch (error) {
+    // Continúa con el calendario por defecto.
+  }
   return CalendarApp.getDefaultCalendar();
 }
 
@@ -657,16 +675,107 @@ function ensureCalendarEvent() {
   return event;
 }
 
+/**
+ * Envía invitación de calendario por correo (.ics).
+ * Eso es lo que le llega a la persona. Meterlo al Calendar de Google es opcional.
+ */
 function inviteGuestToCalendar(email) {
-  const event = ensureCalendarEvent();
-  const guests = event.getGuestList(true);
-  const alreadyInvited = guests.some(function (guest) {
-    return normalizeEmail(guest.getEmail()) === normalizeEmail(email);
+  const normalized = normalizeEmail(email);
+  if (!normalized) {
+    throw new Error("Correo vacío para Calendar");
+  }
+
+  try {
+    const event = ensureCalendarEvent();
+    const guests = event.getGuestList(true);
+    const alreadyInvited = guests.some(function (guest) {
+      return normalizeEmail(guest.getEmail()) === normalized;
+    });
+    if (!alreadyInvited) {
+      event.addGuest(normalized);
+    }
+  } catch (error) {
+    // No bloquea el .ics
+  }
+
+  sendCalendarIcsInvite_(normalized);
+}
+
+function icsEscape_(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function formatIcsDateUtc_(date) {
+  return Utilities.formatDate(date, "UTC", "yyyyMMdd'T'HHmmss'Z'");
+}
+
+function sendCalendarIcsInvite_(email) {
+  const start = CONFIG.EVENT_START;
+  const end = CONFIG.EVENT_END;
+  const stamp = formatIcsDateUtc_(new Date());
+  const uid =
+    "cloud-coffee-" +
+    Utilities.base64EncodeWebSafe(normalizeEmail(email)).replace(/=+$/g, "") +
+    "@c4c7ops.co";
+
+  const ics = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//C4c7Ops//Cloud and Coffee//ES",
+    "METHOD:REQUEST",
+    "CALSCALE:GREGORIAN",
+    "BEGIN:VEVENT",
+    "UID:" + uid,
+    "DTSTAMP:" + stamp,
+    "DTSTART:" + formatIcsDateUtc_(start),
+    "DTEND:" + formatIcsDateUtc_(end),
+    "SUMMARY:" + icsEscape_(CONFIG.EVENT_TITLE),
+    "DESCRIPTION:" + icsEscape_(CONFIG.EVENT_DESCRIPTION),
+    "LOCATION:" + icsEscape_(CONFIG.EVENT_LOCATION),
+    "ORGANIZER;CN=C4c7Ops:mailto:" + CONFIG.ORGANIZER_EMAIL,
+    "ATTENDEE;RSVP=TRUE;CN=" + email + ":mailto:" + email,
+    "STATUS:CONFIRMED",
+    "SEQUENCE:0",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const blob = Utilities.newBlob(ics, "text/calendar", "cloud-and-coffee.ics");
+  const locationHtml = String(CONFIG.EVENT_LOCATION || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  MailApp.sendEmail({
+    to: email,
+    name: "C4c7Ops",
+    subject: "Invitación: Cloud & Coffee · jueves 30 de julio",
+    htmlBody:
+      '<div style="font-family:Arial,Helvetica,sans-serif;color:#222;line-height:1.6;">' +
+      "<p>Hola,</p>" +
+      "<p>Te confirmamos tu lugar en <strong>Cloud &amp; Coffee</strong>.</p>" +
+      "<p><strong>Fecha:</strong> jueves 30 de julio de 2026<br>" +
+      "<strong>Horario:</strong> 7:00 a. m. – 9:00 a. m.<br>" +
+      "<strong>Lugar:</strong> " +
+      locationHtml +
+      "</p>" +
+      "<p>Abre el archivo adjunto <strong>cloud-and-coffee.ics</strong> para agregarlo a tu calendario.</p>" +
+      "<p style=\"color:#666;font-size:13px;\">Hosted by C4c7Ops</p>" +
+      "</div>",
+    body:
+      "Te confirmamos tu lugar en Cloud & Coffee.\n\n" +
+      "Fecha: jueves 30 de julio de 2026\n" +
+      "Horario: 7:00 a. m. – 9:00 a. m.\n" +
+      "Lugar: " +
+      CONFIG.EVENT_LOCATION +
+      "\n\n" +
+      "Abre el archivo .ics adjunto para agregarlo a tu calendario.\n",
+    attachments: [blob],
   });
-
-  if (alreadyInvited) return;
-
-  event.addGuest(email);
 }
 
 function removeGuestFromCalendar(email) {
@@ -674,24 +783,61 @@ function removeGuestFromCalendar(email) {
   const existingId = properties.getProperty(CONFIG.EVENT_PROPERTY_KEY);
   if (!existingId) return;
 
-  const calendar = getOrganizerCalendar();
-  let event;
-
   try {
-    event = calendar.getEventById(existingId);
+    const event = getOrganizerCalendar().getEventById(existingId);
+    if (!event) return;
+    const match = event.getGuestList(true).find(function (guest) {
+      return normalizeEmail(guest.getEmail()) === normalizeEmail(email);
+    });
+    if (match) event.removeGuest(email);
   } catch (error) {
+    // Silencioso
+  }
+}
+
+/** Reenvía el .ics al correo de la fila activa en Registros. */
+function reenviarInvitacionCalendar() {
+  const ui = SpreadsheetApp.getUi();
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  let email = "";
+
+  if (sheet.getName() === CONFIG.SHEET_NAME) {
+    const row = sheet.getActiveRange().getRow();
+    if (row > 1) {
+      email = normalizeEmail(sheet.getRange(row, COL.EMAIL).getValue());
+    }
+  }
+
+  if (!email) {
+    const prompt = ui.prompt(
+      "Reenviar Calendar",
+      "Correo del aprobado:",
+      ui.ButtonSet.OK_CANCEL,
+    );
+    if (prompt.getSelectedButton() !== ui.Button.OK) return;
+    email = normalizeEmail(prompt.getResponseText());
+  }
+
+  if (!email) {
+    ui.alert("Correo no válido.");
     return;
   }
 
-  if (!event) return;
-
-  const guests = event.getGuestList(true);
-  const match = guests.find(function (guest) {
-    return normalizeEmail(guest.getEmail()) === normalizeEmail(email);
-  });
-
-  if (!match) return;
-  event.removeGuest(email);
+  try {
+    inviteGuestToCalendar(email);
+    const attendee = findByEmailInSheet(getSheet(), email);
+    if (attendee && attendee.rowNumber) {
+      getSheet()
+        .getRange(attendee.rowNumber, COL.CALENDAR_INVITED_AT)
+        .setValue(new Date().toISOString());
+    }
+    ui.alert("Listo. Se envió el .ics de Calendar a:\n" + email);
+  } catch (error) {
+    ui.alert(
+      "No se pudo enviar: " +
+        (error && error.message ? error.message : "error desconocido"),
+    );
+  }
 }
 
 function jsonResponse(payload) {

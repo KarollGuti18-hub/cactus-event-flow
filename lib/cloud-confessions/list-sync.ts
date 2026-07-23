@@ -3,6 +3,7 @@ import {
   addCloudConfessionsContactsToList,
   buildCloudConfessionsAttributes,
   getCloudConfessionsListIds,
+  isBrevoAlreadyInListResponse,
   upsertCloudConfessionsContact,
   type CloudConfessionsListIds,
 } from "@/lib/cloud-confessions/brevo";
@@ -102,8 +103,15 @@ export async function moveCloudCoffeeContactToStage(input: {
   }
 
   const add = await addCloudConfessionsContactsToList(targetId, [email]);
-  if (!add.ok) {
-    return { ok: false, error: `Brevo add-to-list falló (${add.status})` };
+  if (!add.ok && !(await isBrevoAlreadyInListResponse(add))) {
+    const body = (await add.json().catch(() => ({}))) as { message?: string };
+    const message = typeof body.message === "string" ? body.message : "";
+    return {
+      ok: false,
+      error: `Brevo add-to-list falló (${add.status})${
+        message ? `: ${message}` : ""
+      }`,
+    };
   }
 
   void updateCloudCoffeeInviteeStatus(email, sheetStatusForStage(input.stage));

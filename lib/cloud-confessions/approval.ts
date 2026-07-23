@@ -3,6 +3,7 @@ import {
   buildCloudConfessionsAttributes,
   buildSharedContactAttributes,
   getCloudConfessionsListIds,
+  isBrevoAlreadyInListResponse,
   upsertCloudConfessionsContact,
 } from "@/lib/cloud-confessions/brevo";
 import { onCloudCoffeeApproved } from "@/lib/cloud-confessions/email-flow";
@@ -115,7 +116,7 @@ export async function processCloudConfessionsApprovalByEmail(
     const add = await addCloudConfessionsContactsToList(listIds.approved, [
       attendee.email,
     ]);
-    if (!add.ok) {
+    if (!add.ok && !(await isBrevoAlreadyInListResponse(add))) {
       throw new Error("No se pudo añadir el contacto a la lista de aprobados");
     }
   }
