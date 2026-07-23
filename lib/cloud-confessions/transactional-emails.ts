@@ -17,7 +17,16 @@ function wrapEmail(input: {
   preview: string;
   title: string;
   bodyHtml: string;
+  /** Absolute URL to hero image (e.g. cups). Shown under the logo when set. */
+  heroImageUrl?: string;
+  heroImageAlt?: string;
 }): string {
+  const hero = input.heroImageUrl
+    ? `<tr><td style="padding:0 0 8px;">
+          <img src="${escapeHtml(input.heroImageUrl)}" width="620" alt="${escapeHtml(input.heroImageAlt ?? "Cloud & Coffee")}" style="display:block;width:100%;max-width:620px;height:auto;border:0;">
+        </td></tr>`
+    : "";
+
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -33,6 +42,7 @@ function wrapEmail(input: {
         <tr><td style="padding:28px 36px 20px;">
           <img src="https://www.c4c7ops.co/logo-c4c7ops-white.png" width="190" alt="C4c7Ops" style="display:block;width:190px;max-width:100%;height:auto;border:0;">
         </td></tr>
+        ${hero}
         <tr><td style="border:0;background:#151518;padding:28px 36px 40px;">
           ${input.bodyHtml}
         </td></tr>
@@ -43,6 +53,8 @@ function wrapEmail(input: {
 </body>
 </html>`;
 }
+
+const INVITE_HERO_IMAGE_URL = "https://www.c4c7ops.co/cloud-and-coffee-email-hero.jpg";
 
 function landingUrl(firstName: string, lastName: string, email: string): string {
   const base = `${getAppUrl()}/cloud-and-coffee`;
@@ -107,6 +119,8 @@ export async function sendCloudCoffeeInviteEmail(input: {
   const html = wrapEmail({
     preview,
     title: subject,
+    heroImageUrl: INVITE_HERO_IMAGE_URL,
+    heroImageAlt: "Cloud & Coffee · tazas C4c7Ops",
     bodyHtml: `
       <p style="margin:0 0 18px;color:#9ab83a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Antes del Summit · Por invitación</p>
       <h1 style="margin:0 0 22px;font-size:34px;line-height:1.12;letter-spacing:-1.3px;color:#fff;">${escapeHtml(name)}, estás invitad@ a<br><span style="color:#9ab83a;">Cloud &amp; Coffee</span></h1>

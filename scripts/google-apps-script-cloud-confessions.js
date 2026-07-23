@@ -1019,11 +1019,24 @@ function markInviteeInvited(email, invitedAt) {
 
 function updateInviteeStatus(email, status, invitedAt) {
   const sheet = getInvitesSheet();
-  const row = findInviteeRow_(sheet, email);
-  if (!row) return;
-
+  let row = findInviteeRow_(sheet, email);
   const normalized = normalizeInviteStatus_(status);
   const now = new Date().toISOString();
+
+  if (!row) {
+    sheet.appendRow([
+      "",
+      "",
+      normalizeEmail(email),
+      normalized,
+      "",
+      "",
+      normalized === "invitado" ? invitedAt || now : "",
+      now,
+    ]);
+    return;
+  }
+
   sheet.getRange(row, INV.STATUS).setValue(normalized);
   sheet.getRange(row, INV.UPDATED_AT).setValue(now);
   if (normalized === "invitado") {

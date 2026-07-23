@@ -17,6 +17,7 @@ import {
 import { getCloudConfessionsTicketUrl } from "@/lib/cloud-confessions/qr";
 import { sendSolicitudRecibidaEmail } from "@/lib/cloud-confessions/registration-email";
 import { onCloudCoffeeRegistered } from "@/lib/cloud-confessions/email-flow";
+import { updateCloudCoffeeInviteeStatus } from "@/lib/cloud-confessions/email-queue";
 import type { CloudConfessionsRegistrationPayload } from "@/lib/cloud-confessions/types";
 import { validateRegistrationPayload } from "@/lib/cloud-confessions/validation";
 
@@ -103,6 +104,7 @@ export async function POST(request: Request) {
 
       // Re-añadir a lista 14 por si salió; no re-dispara automation si ya estaba.
       await addCloudConfessionsContactsToList(listIds.registered, [data.email]);
+      void updateCloudCoffeeInviteeStatus(data.email, "registrado");
 
       let sheetsSynced = false;
       try {
@@ -199,6 +201,7 @@ export async function POST(request: Request) {
     }
 
     await onCloudCoffeeRegistered(data.email);
+    void updateCloudCoffeeInviteeStatus(data.email, "registrado");
 
     let sheetsSynced = false;
     let sheetsError: string | undefined;
