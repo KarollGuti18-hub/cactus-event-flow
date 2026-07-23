@@ -932,6 +932,9 @@ const INVITE_RUN = {
 /** Lotes de invitaciones (protege reputación del remitente). */
 const INVITE_BATCH = {
   SIZE: 20,
+  /** Segundos entre un correo y el siguiente dentro del mismo lote. */
+  GAP_SECONDS: 8,
+  /** Minutos hasta el siguiente lote automático. */
   DELAY_MINUTES: 20,
   TRIGGER_HANDLER: "correrSiguienteLoteInvitados",
 };
@@ -1014,7 +1017,7 @@ function formatInvitesSheet_(sheet) {
   check.insertCheckboxes();
   check.setValue(false);
   check.setNote(
-    "▶ CORRER: envía hasta 20 pendientes. Si quedan más, el siguiente lote sale solo en ~20 min. Menú → Cancelar lotes para detener.",
+    "▶ CORRER: envía hasta 20, con ~8 s entre cada correo. Si quedan más, el siguiente lote sale solo en ~20 min. Menú → Cancelar lotes para detener.",
   );
   // Texto visible al lado en la fila de encabezado vía comentario + color fuerte
   check.setBackground("#9ab83a");
@@ -1308,7 +1311,9 @@ function correrInvitaciones(skipConfirm, fromAutoLote) {
         pendingRows.length +
         " pendiente(s).\n\nEste lote enviará hasta " +
         batchSize +
-        " ahora" +
+        " ahora (~" +
+        INVITE_BATCH.GAP_SECONDS +
+        " s entre cada uno)" +
         (remainingAfter > 0
           ? " y programará el resto cada " +
             INVITE_BATCH.DELAY_MINUTES +
@@ -1323,6 +1328,7 @@ function correrInvitaciones(skipConfirm, fromAutoLote) {
   let ok = 0;
   let fail = 0;
   const errors = [];
+  const gapMs = Math.max(0, Number(INVITE_BATCH.GAP_SECONDS || 0) * 1000);
   for (let i = 0; i < thisBatch.length; i += 1) {
     try {
       processInviteRow_(thisBatch[i]);
@@ -1339,6 +1345,9 @@ function correrInvitaciones(skipConfirm, fromAutoLote) {
             (error && error.message ? error.message : "error"),
         );
       }
+    }
+    if (gapMs > 0 && i < thisBatch.length - 1) {
+      Utilities.sleep(gapMs);
     }
   }
 
