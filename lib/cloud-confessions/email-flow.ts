@@ -139,7 +139,12 @@ export async function onCloudCoffeeVisit(input: {
   const email = normalizeEmail(input.email);
   const contact = await getCloudConfessionsContact(email);
   const status = contactStatus(contact);
-  if (hasRegisteredOrBeyond(status) || status === "incomplete") {
+  // Una sola vez: si ya visitó / incompleto / registrado, no rearmar el mail.
+  if (
+    hasRegisteredOrBeyond(status) ||
+    status === "incomplete" ||
+    status === "visited"
+  ) {
     return;
   }
 
@@ -184,6 +189,22 @@ export async function onCloudCoffeeIncomplete(input: {
   const names = contactName(contact);
   const firstName = (input.firstName ?? "").trim() || names.firstName || "hola";
   const lastName = (input.lastName ?? "").trim() || names.lastName;
+
+  // Ya incompleto: actualiza datos si vienen, pero no otro mail de incompleto.
+  if (status === "incomplete") {
+    await moveCloudCoffeeContactToStage({
+      email,
+      stage: "incomplete",
+      attributes: buildSharedContactAttributes({
+        firstName,
+        lastName,
+        company: input.company,
+        jobTitle: input.jobTitle,
+        telefono: input.telefono,
+      }),
+    });
+    return;
+  }
 
   await moveCloudCoffeeContactToStage({
     email,
