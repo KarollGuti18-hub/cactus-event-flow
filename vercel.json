@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cloud-and-coffee/cron/email-jobs",
-      "schedule": "*/15 * * * *"
-    }
-  ]
-}
