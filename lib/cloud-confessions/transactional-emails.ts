@@ -101,7 +101,7 @@ export async function sendCloudCoffeeInviteEmail(input: {
 }): Promise<{ sent: boolean; error?: string }> {
   const name = input.firstName.trim() || "hola";
   const href = landingUrl(input.firstName, input.lastName ?? "", input.email);
-  const subject = "Estás invitad@ a Cloud & Coffee";
+  const subject = `${name}, estás invitad@ a Cloud & Coffee`;
   const preview =
     "Café y desayuno con C4c7Ops · 30 jul · 7:00–9:00 a. m. · cerca al Ágora.";
   const html = wrapEmail({
@@ -109,9 +109,8 @@ export async function sendCloudCoffeeInviteEmail(input: {
     title: subject,
     bodyHtml: `
       <p style="margin:0 0 18px;color:#9ab83a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Antes del Summit · Por invitación</p>
-      <h1 style="margin:0 0 22px;font-size:34px;line-height:1.12;letter-spacing:-1.3px;color:#fff;">Tómate un café con nosotros en<br><span style="color:#9ab83a;">Cloud &amp; Coffee</span></h1>
-      <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Antes del AWS Summit Bogotá te invitamos a Cloud &amp; Coffee: tómate un café con C4c7Ops, desayuna y llega con toda la energía al Summit.</p>
+      <h1 style="margin:0 0 22px;font-size:34px;line-height:1.12;letter-spacing:-1.3px;color:#fff;">${escapeHtml(name)}, estás invitad@ a<br><span style="color:#9ab83a;">Cloud &amp; Coffee</span></h1>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Antes del AWS Summit Bogotá te invitamos: tómate un café con C4c7Ops, desayuna y llega con toda la energía al Summit.</p>
       <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Será el <strong style="color:#fff;">jueves 30 de julio</strong>, cerca al Ágora, de <strong style="color:#fff;">7:00 a. m. a 9:00 a. m.</strong> La dirección exacta te la compartimos al confirmar tu cupo.</p>
       ${ctaButton(href, "Solicitar mi cupo")}
     `,
