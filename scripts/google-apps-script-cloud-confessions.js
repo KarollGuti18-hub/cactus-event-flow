@@ -4,7 +4,7 @@
  * SETUP:
  * 1. Crear el archivo "Registros - Cloud & Coffee".
  * 2. Extensiones → Apps Script → pegar este archivo.
- * 3. Reemplazar SECRET y WEBHOOK_URL.
+ * 3. SECRET debe coincidir con CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET (o menú → Configurar secreto).
  * 4. Autorizar el script con ext-s@c4c7us.com (cuenta del Calendar).
  * 5. Implementar como aplicación web (Ejecutar como: Yo, Acceso: Cualquiera).
  * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
@@ -15,7 +15,9 @@
  *
  * Hoja "Invitados" (columnas):
  *   Nombre | Apellido | Correo | Estado | Empresa | Cargo | Invitado el | Actualizado
- * Al escribir/pegar un Correo (o menú Procesar invitados), envía la invitación.
+ * Pega la lista (Nombre, Apellido, Correo). NO se envía al pegar.
+ * Para enviar: marca la casilla verde ▶ Correr (I1), o menú → ▶ Correr invitaciones.
+ * Si falla: popup + columna Error (J).
  * Estado se actualiza solo: pendiente → invitado → visitó → incompleto → registrado → aprobado/rechazado.
  *
  * Hoja "ColaEmails": cola de correos diferidos (cron externo / Vercel).
@@ -120,7 +122,7 @@ function doPost(e) {
   try {
     const payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
 
-    if (String(payload.secret || "").trim() !== String(CONFIG.SECRET || "").trim()) {
+    if (String(payload.secret || "").trim() !== getWebhookSecret_()) {
       return jsonResponse({ success: false, error: "No autorizado" });
     }
 
@@ -193,30 +195,44 @@ function doPost(e) {
 
 function onEdit(e) {
   if (!e || !e.range) return;
-  if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return;
 
   const sheet = e.range.getSheet();
   const sheetName = sheet.getName();
-  const rowNumber = e.range.getRow();
-  if (rowNumber === 1) return;
 
+  // Invitados: solo la casilla Correr dispara envíos (no al pegar correos).
   if (sheetName === CONFIG.INVITES_SHEET_NAME) {
-    // Columna Correo (3): al pegar/escribir un correo, invita.
-    if (e.range.getColumn() === INV.EMAIL) {
+    if (
+      e.range.getRow() === INVITE_RUN.ROW &&
+      e.range.getColumn() === INVITE_RUN.CHECK_COL &&
+      e.range.getNumRows() === 1 &&
+      e.range.getNumColumns() === 1
+    ) {
+      const checked =
+        e.value === true ||
+        String(e.value || "").toUpperCase() === "TRUE";
+      if (!checked) return;
+      sheet.getRange(INVITE_RUN.ROW, INVITE_RUN.CHECK_COL).setValue(false);
+      SpreadsheetApp.getActiveSpreadsheet().toast(
+        "Correr activado…",
+        "Cloud & Coffee",
+        3,
+      );
       try {
-        processInviteRow_(rowNumber);
+        correrInvitaciones(true);
       } catch (error) {
-        SpreadsheetApp.getActiveSpreadsheet().toast(
-          error && error.message ? error.message : "Error al invitar",
-          "Cloud & Coffee",
-          8,
-        );
+        const msg =
+          error && error.message ? error.message : "Error al correr invitaciones";
+        SpreadsheetApp.getActiveSpreadsheet().toast(msg, "Cloud & Coffee", 10);
+        SpreadsheetApp.getUi().alert("Error al correr:\n\n" + msg);
       }
     }
     return;
   }
 
+  if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return;
   if (sheetName !== CONFIG.SHEET_NAME) return;
+  const rowNumber = e.range.getRow();
+  if (rowNumber === 1) return;
   if (e.range.getColumn() !== COL.STATUS) return;
 
   const status = parseStatus(e.value);
@@ -238,7 +254,7 @@ function processStatusChange_(rowNumber, status) {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify({
-      secret: CONFIG.SECRET,
+      secret: getWebhookSecret_(),
       email: email,
       estado: status,
     }),
@@ -288,11 +304,18 @@ function onOpen() {
     .createMenu("Cloud & Coffee")
     .addItem("1. Instalar activador", "instalarActivadorOnEdit")
     .addItem("2. Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
-    .addItem("3. Procesar invitados", "procesarInvitadosPendientes")
-    .addItem("4. Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
+    .addItem("3. Configurar secreto webhook", "configurarSecretoWebhook")
+    .addItem("▶ Correr invitaciones", "correrInvitacionesDesdeMenu")
+    .addItem("Probar invite (fila activa)", "probarInviteFilaActiva")
+    .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
+}
+
+/** Wrapper de menú: siempre muestra feedback. */
+function correrInvitacionesDesdeMenu() {
+  correrInvitaciones(false);
 }
 
 /**
@@ -845,6 +868,42 @@ function reenviarInvitacionCalendar() {
   }
 }
 
+
+/** Secreto efectivo: Script Properties gana sobre CONFIG (así no se pierde al pegar código). */
+function getWebhookSecret_() {
+  const fromProps = PropertiesService.getScriptProperties().getProperty(
+    "CLOUD_CONFESSIONS_SECRET",
+  );
+  if (fromProps && String(fromProps).trim()) {
+    return String(fromProps).trim();
+  }
+  return String(CONFIG.SECRET || "").trim();
+}
+
+function configurarSecretoWebhook() {
+  const ui = SpreadsheetApp.getUi();
+  const current = getWebhookSecret_();
+  const result = ui.prompt(
+    "Secreto webhook Cloud & Coffee",
+    "Pega el mismo valor que CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET en Vercel.\nActual (primeros 8): " +
+      (current ? current.slice(0, 8) + "…" : "(vacío)"),
+    ui.ButtonSet.OK_CANCEL,
+  );
+  if (result.getSelectedButton() !== ui.Button.OK) return;
+  const value = String(result.getResponseText() || "").trim();
+  if (!value) {
+    ui.alert("No se guardó: el secreto quedó vacío.");
+    return;
+  }
+  PropertiesService.getScriptProperties().setProperty(
+    "CLOUD_CONFESSIONS_SECRET",
+    value,
+  );
+  ui.alert(
+    "Secreto guardado en Properties del script.\nPuedes volver a pegar el código sin perderlo.",
+  );
+}
+
 function jsonResponse(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
     ContentService.MimeType.JSON,
@@ -860,6 +919,13 @@ const INV = {
   JOB_TITLE: 6,
   INVITED_AT: 7,
   UPDATED_AT: 8,
+  ERROR: 10,
+};
+
+/** Casilla única ▶ Correr en I1. Columna J = Error. */
+const INVITE_RUN = {
+  CHECK_COL: 9,
+  ROW: 1,
 };
 
 /** Estados en los que ya no se reenvía la invitación automática. */
@@ -913,7 +979,7 @@ function ensureInvitesAndJobsSheets() {
   getJobsSheet();
   formatInvitesSheet_(invites);
   SpreadsheetApp.getUi().alert(
-    "Hojas listas: Invitados y ColaEmails.\n\nEn Invitados escribe Nombre, Apellido y Correo. Al pegar el Correo se envía la invitación y Estado pasa a \"invitado\".",
+    "Hojas listas: Invitados y ColaEmails.\n\n1. Pega Nombre | Apellido | Correo (Estado queda pendiente).\n2. Marca la casilla verde en I1 (▶ Correr) o menú → ▶ Correr invitaciones.\nSi falla: sale un popup y el detalle en columna Error (J).\n3. Solo entonces se envían los correos.",
   );
 }
 
@@ -932,6 +998,23 @@ function formatInvitesSheet_(sheet) {
   sheet.setColumnWidth(INV.JOB_TITLE, 140);
   sheet.setColumnWidth(INV.INVITED_AT, 180);
   sheet.setColumnWidth(INV.UPDATED_AT, 180);
+  sheet.setColumnWidth(INV.ERROR, 360);
+
+  // I1 = casilla ▶ Correr | J1 = encabezado Error
+  const check = sheet.getRange(INVITE_RUN.ROW, INVITE_RUN.CHECK_COL);
+  check.clearDataValidations();
+  check.insertCheckboxes();
+  check.setValue(false);
+  check.setNote(
+    "▶ CORRER: marca esta casilla para enviar invitaciones pendientes. No se envía al pegar correos.",
+  );
+  // Texto visible al lado en la fila de encabezado vía comentario + color fuerte
+  check.setBackground("#9ab83a");
+  sheet.setColumnWidth(INVITE_RUN.CHECK_COL, 56);
+  sheet.getRange(1, INV.ERROR).setValue("Error");
+  sheet.getRange(1, INV.ERROR).setFontWeight("bold");
+  sheet.getRange(1, INV.ERROR).setBackground("#151518");
+  sheet.getRange(1, INV.ERROR).setFontColor("#9ab83a");
 
   const rule = SpreadsheetApp.newDataValidation()
     .requireValueInList(CONFIG.INVITE_STATUS_VALUES, true)
@@ -949,8 +1032,9 @@ function migrateInvitesSheetIfNeeded_(sheet) {
   const h0 = headers[0].toLowerCase();
   const h2 = String(headers[2] || "").toLowerCase();
 
-  // Ya está en el layout nuevo.
+  // Ya está en el layout nuevo (añade Error si falta).
   if (headers[0] === "Nombre" && headers[2] === "Correo" && headers[3] === "Estado") {
+    sheet.getRange(1, INV.ERROR).setValue("Error");
     return;
   }
 
@@ -1037,6 +1121,74 @@ function getJobsSheet() {
   return sheet;
 }
 
+
+/**
+ * Selecciona una fila en Invitados y ejecuta el webhook.
+ * Muestra el status HTTP y el body completo en un alert (para ver el error real).
+ */
+function probarInviteFilaActiva() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  if (sheet.getName() !== CONFIG.INVITES_SHEET_NAME) {
+    SpreadsheetApp.getUi().alert("Abre la hoja Invitados y selecciona una fila con correo.");
+    return;
+  }
+  const row = sheet.getActiveRange().getRow();
+  if (row < 2) {
+    SpreadsheetApp.getUi().alert("Selecciona una fila de datos (no el encabezado).");
+    return;
+  }
+  const email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
+  if (!email) {
+    SpreadsheetApp.getUi().alert("Esa fila no tiene correo.");
+    return;
+  }
+
+  SpreadsheetApp.getActiveSpreadsheet().toast("Probando " + email + "…", "Cloud & Coffee", 5);
+
+  const response = UrlFetchApp.fetch(CONFIG.INVITE_WEBHOOK_URL, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      secret: getWebhookSecret_(),
+      email: email,
+      nombre: String(sheet.getRange(row, INV.FIRST_NAME).getValue() || ""),
+      apellido: String(sheet.getRange(row, INV.LAST_NAME).getValue() || ""),
+      empresa: String(sheet.getRange(row, INV.COMPANY).getValue() || ""),
+      cargo: String(sheet.getRange(row, INV.JOB_TITLE).getValue() || ""),
+    }),
+    muteHttpExceptions: true,
+  });
+
+  const statusCode = response.getResponseCode();
+  const body = response.getContentText() || "(sin body)";
+  const now = new Date().toISOString();
+
+  if (statusCode >= 200 && statusCode < 300) {
+    sheet.getRange(row, INV.STATUS).setValue("invitado");
+    sheet.getRange(row, INV.INVITED_AT).setValue(now);
+    sheet.getRange(row, INV.UPDATED_AT).setValue(now);
+    sheet.getRange(row, INV.ERROR).setValue("");
+    SpreadsheetApp.getUi().alert(
+      "OK (" + statusCode + ")\n\n" + email + "\n\n" + body.slice(0, 800),
+    );
+  } else {
+    sheet.getRange(row, INV.STATUS).setValue("error");
+    sheet.getRange(row, INV.UPDATED_AT).setValue(now);
+    sheet.getRange(row, INV.ERROR).setValue(
+      ("HTTP " + statusCode + " · " + body).slice(0, 500),
+    );
+    SpreadsheetApp.getUi().alert(
+      "ERROR (" +
+        statusCode +
+        ")\n\n" +
+        email +
+        "\n\n" +
+        body.slice(0, 1200) +
+        "\n\nRevisa SECRET en el script vs CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET en Vercel.",
+    );
+  }
+}
+
 function processInviteRow_(rowNumber) {
   const sheet = getInvitesSheet();
   const email = normalizeEmail(sheet.getRange(rowNumber, INV.EMAIL).getValue());
@@ -1066,7 +1218,7 @@ function processInviteRow_(rowNumber) {
       method: "post",
       contentType: "application/json",
       payload: JSON.stringify({
-        secret: CONFIG.SECRET,
+        secret: getWebhookSecret_(),
         email: email,
         nombre: String(sheet.getRange(rowNumber, INV.FIRST_NAME).getValue() || ""),
         apellido: String(sheet.getRange(rowNumber, INV.LAST_NAME).getValue() || ""),
@@ -1079,28 +1231,42 @@ function processInviteRow_(rowNumber) {
     const statusCode = response.getResponseCode();
     const body = response.getContentText();
     if (statusCode < 200 || statusCode >= 300) {
+      const msg =
+        "Webhook invite falló (" +
+        statusCode +
+        ")" +
+        (body ? " · " + body : "");
       sheet.getRange(rowNumber, INV.STATUS).setValue("error");
       sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(new Date().toISOString());
-      throw new Error(
-        "Webhook invite falló (" +
-          statusCode +
-          ")" +
-          (body ? " · " + body : ""),
-      );
+      sheet.getRange(rowNumber, INV.ERROR).setValue(msg.slice(0, 500));
+      throw new Error(msg);
     }
 
     const now = new Date().toISOString();
     sheet.getRange(rowNumber, INV.STATUS).setValue("invitado");
     sheet.getRange(rowNumber, INV.INVITED_AT).setValue(now);
     sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(now);
+    sheet.getRange(rowNumber, INV.ERROR).setValue("");
   } catch (error) {
+    const msg =
+      error && error.message ? String(error.message) : "Error al invitar";
     sheet.getRange(rowNumber, INV.STATUS).setValue("error");
     sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(new Date().toISOString());
+    sheet.getRange(rowNumber, INV.ERROR).setValue(msg.slice(0, 500));
     throw error;
   }
 }
 
-function procesarInvitadosPendientes() {
+/**
+ * Envía invitaciones a filas pendientes (con correo y sin envío previo).
+ * @param {boolean=} skipConfirm si true (casilla Correr), no pide confirmación.
+ */
+function correrInvitaciones(skipConfirm) {
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    "Revisando invitados pendientes…",
+    "▶ Correr",
+    5,
+  );
   const sheet = getInvitesSheet();
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) {
@@ -1108,24 +1274,78 @@ function procesarInvitadosPendientes() {
     return;
   }
 
-  let ok = 0;
-  let fail = 0;
+  const pendingRows = [];
   for (let row = 2; row <= lastRow; row += 1) {
     const email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
     if (!email) continue;
-    const estado = normalizeInviteStatus_(sheet.getRange(row, INV.STATUS).getValue());
+    const estado = normalizeInviteStatus_(
+      sheet.getRange(row, INV.STATUS).getValue(),
+    );
     if (INVITE_DONE_STATUSES[estado]) continue;
+    const alreadyInvitedAt = String(
+      sheet.getRange(row, INV.INVITED_AT).getValue() || "",
+    ).trim();
+    if (alreadyInvitedAt) continue;
+    pendingRows.push(row);
+  }
+
+  if (pendingRows.length === 0) {
+    SpreadsheetApp.getUi().alert(
+      "No hay invitaciones pendientes.\n\nPega Nombre | Apellido | Correo con Estado vacío o \"pendiente\", luego marca Correr.",
+    );
+    return;
+  }
+
+  if (!skipConfirm) {
+    const ui = SpreadsheetApp.getUi();
+    const confirm = ui.alert(
+      "Correr invitaciones",
+      "Se enviarán " +
+        pendingRows.length +
+        " invitación(es) pendiente(s). ¿Continuar?",
+      ui.ButtonSet.YES_NO,
+    );
+    if (confirm !== ui.Button.YES) return;
+  }
+
+  let ok = 0;
+  let fail = 0;
+  const errors = [];
+  for (let i = 0; i < pendingRows.length; i += 1) {
     try {
-      processInviteRow_(row);
+      processInviteRow_(pendingRows[i]);
       ok += 1;
     } catch (error) {
       fail += 1;
+      if (errors.length < 3) {
+        const email = normalizeEmail(
+          sheet.getRange(pendingRows[i], INV.EMAIL).getValue(),
+        );
+        errors.push(
+          email +
+            ": " +
+            (error && error.message ? error.message : "error"),
+        );
+      }
     }
   }
 
-  SpreadsheetApp.getUi().alert(
-    "Invitados procesados: " + ok + " ok · " + fail + " con error.",
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    ok + " ok · " + fail + " con error",
+    "Correr invitaciones",
+    8,
   );
+  let message = "Invitaciones enviadas: " + ok + " ok · " + fail + " con error.";
+  if (errors.length) {
+    message +=
+      "\n\nDetalle (también en columna Error):\n" + errors.join("\n");
+  }
+  SpreadsheetApp.getUi().alert(message);
+}
+
+/** Alias por si quedó referenciado el nombre anterior. */
+function procesarInvitadosPendientes() {
+  correrInvitaciones(false);
 }
 
 function findInviteeRow_(sheet, email) {
@@ -1245,7 +1465,7 @@ function resetearContactoPrueba() {
     ui.alert(
       "Listo: " +
         email +
-        " quedó en pendiente.\n\nPara visitar de nuevo sin caché: ventana privada o borra sessionStorage de c4c7ops.co.\nLuego: Estado pendiente → Procesar invitados (o edita Correo).",
+        " quedó en pendiente.\n\nPara visitar de nuevo sin caché: ventana privada o borra sessionStorage de c4c7ops.co.\nLuego: Estado pendiente → marca Correr (o menú ▶ Correr invitaciones).",
     );
   } catch (error) {
     ui.alert(
@@ -1284,7 +1504,7 @@ function resetTestContactBrevo_(email) {
     method: "post",
     contentType: "application/json",
     payload: JSON.stringify({
-      secret: CONFIG.SECRET,
+      secret: getWebhookSecret_(),
       email: normalizeEmail(email),
     }),
     muteHttpExceptions: true,
