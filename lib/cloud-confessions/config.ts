@@ -16,9 +16,9 @@ export const cloudConfessionsConfig = {
   calendarTimezone: "America/Bogota",
   ctaLabel: "Solicitar mi cupo",
   confirmationMessage:
-    "Recibimos tu solicitud para Cloud & Coffee. Nuestro equipo la revisará y te confirmará el cupo pronto.",
+    "Recibimos tu solicitud para Cloud & Coffee. Te confirmaremos el cupo pronto.",
   alreadyPendingMessage:
-    "Este correo ya tiene una solicitud en revisión. Te confirmaremos el cupo cuando la revisemos.",
+    "Este correo ya tiene una solicitud en proceso. Te confirmaremos el cupo pronto.",
   alreadyApprovedMessage:
     "Este correo ya tiene un cupo aprobado. Revisa tu correo de confirmación o abre tu entrada desde el enlace que te enviamos.",
   limitedSpots: true,
@@ -76,7 +76,7 @@ export const cloudConfessionsCopy = {
   registrationEyebrow: "Solicitud de cupo",
   registrationTitle: "Solicita tu lugar",
   registrationDescription:
-    "Déjanos tus datos. Revisamos cada solicitud y te confirmamos si hay cupo.",
+    "Déjanos tus datos. Te confirmamos si hay cupo pronto.",
   form: {
     firstName: "Nombre",
     lastName: "Apellidos",

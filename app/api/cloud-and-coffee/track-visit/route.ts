@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getBrevoApiKey, isValidEmail, normalizeEmail } from "@/lib/brevo";
-import {
-  buildCloudConfessionsAttributes,
-  buildSharedContactAttributes,
-  getCloudConfessionsListIds,
-  upsertCloudConfessionsContact,
-} from "@/lib/cloud-confessions/brevo";
+import { getCloudConfessionsListIds } from "@/lib/cloud-confessions/brevo";
+import { onCloudCoffeeVisit } from "@/lib/cloud-confessions/email-flow";
 import type { CloudConfessionsVisitPayload } from "@/lib/cloud-confessions/types";
 import { sanitizeText } from "@/lib/cloud-confessions/validation";
 
@@ -28,33 +24,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Correo no válido" }, { status: 400 });
     }
 
-    const response = await upsertCloudConfessionsContact({
+    await onCloudCoffeeVisit({
       email,
-      attributes: {
-        ...buildSharedContactAttributes({
-          firstName: sanitizeText(body.firstName, 80),
-          lastName: sanitizeText(body.lastName, 100),
-        }),
-        ...buildCloudConfessionsAttributes({
-          status: "visited",
-          origin: "invitation_link",
-        }),
-      },
-      listIds: [listIds.visited],
+      firstName: sanitizeText(body.firstName, 80),
+      lastName: sanitizeText(body.lastName, 100),
     });
 
-    if (!response.ok) {
-      console.error("Cloud Confession visit tracking failed", {
-        status: response.status,
-      });
-      return NextResponse.json(
-        { error: "No pudimos registrar la visita" },
-        { status: 502 },
-      );
-    }
-
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch {
+  } catch (error) {
+    console.error("Cloud Confession visit tracking failed", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+      message: error instanceof Error ? error.message : "unknown",
+    });
     return NextResponse.json(
       { error: "No pudimos registrar la visita" },
       { status: 500 },

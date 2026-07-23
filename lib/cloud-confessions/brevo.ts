@@ -23,7 +23,7 @@ export interface CloudConfessionsContactData {
   telefono?: string;
 }
 
-interface CloudConfessionsListIds {
+export interface CloudConfessionsListIds {
   invited: number;
   visited: number;
   incomplete: number;
@@ -111,6 +111,7 @@ export function buildCloudConfessionsAttributes({
   checkedInAt,
 }: {
   status:
+    | "invited"
     | "visited"
     | "incomplete"
     | "pending_approval"

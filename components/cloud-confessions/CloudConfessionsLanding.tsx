@@ -311,48 +311,48 @@ export default function CloudConfessionsLanding() {
         id="inicio"
         className="section-anchor relative mx-auto grid max-w-7xl gap-x-10 gap-y-10 px-5 pb-24 pt-20 sm:px-8 lg:grid-cols-[minmax(0,1fr)_25rem] lg:items-start lg:gap-y-14 lg:pb-32 xl:gap-x-16"
       >
-        <section className="relative left-1/2 flex min-h-[calc(100svh-5rem)] w-screen -translate-x-1/2 flex-col justify-start overflow-hidden bg-[#020b07] pb-16 pt-8 sm:pt-10 lg:col-span-2 lg:row-start-1 lg:min-h-[calc(100svh-5rem)] lg:pb-20 lg:pt-8">
+        <section className="relative left-1/2 flex w-screen -translate-x-1/2 flex-col justify-start overflow-x-clip bg-[#020b07] pb-14 pt-6 sm:pt-10 sm:pb-16 lg:col-span-2 lg:row-start-1 lg:min-h-[calc(100svh-5rem)] lg:overflow-hidden lg:pb-20 lg:pt-8">
           <div className="pointer-events-none absolute inset-0" aria-hidden="true">
-            <div className="absolute inset-y-0 right-0 w-full sm:w-[90%] lg:w-[96%]">
+            <div className="absolute inset-y-0 right-0 hidden w-[90%] sm:block lg:w-[96%]">
               <Image
                 src="/cloud-confessions-banner.jpg"
                 alt=""
                 fill
                 priority
                 quality={90}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 96vw"
+                sizes="(max-width: 1024px) 90vw, 96vw"
                 className="object-contain object-top"
               />
             </div>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] from-[0%] via-[#020b07] via-[52%] to-transparent to-[64%]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#020b07] from-[0%] via-[#020b07] via-[52%] to-transparent to-[64%] max-sm:via-[#020b07] max-sm:to-[#020b07]" />
             <div className="absolute inset-0 bg-gradient-to-t from-cactus-bg via-transparent to-black/15" />
           </div>
 
           <div className="relative z-10 mx-auto w-full max-w-7xl px-5 sm:px-8">
             <div className="max-w-3xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-cactus-green">
-                <span className="h-1.5 w-1.5 rounded-full bg-cactus-green" />
-                {cloudConfessionsCopy.invitationBadge}
+              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-cactus-green/30 bg-cactus-green/10 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-cactus-green sm:px-4 sm:text-[11px] sm:tracking-[0.18em]">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-cactus-green" />
+                <span className="truncate">{cloudConfessionsCopy.invitationBadge}</span>
               </div>
 
-              <p className="mt-8 text-xs font-semibold uppercase tracking-[0.24em] text-white/42">
+              <p className="mt-6 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/42 sm:mt-8 sm:text-xs sm:tracking-[0.24em]">
                 {cloudConfessionsCopy.summitContext}
               </p>
-              <h1 className="mt-5 text-[3.65rem] font-extrabold leading-[0.9] tracking-[-0.065em] sm:text-[5.3rem] lg:text-[6.25rem]">
+              <h1 className="mt-4 text-[2.75rem] font-extrabold leading-[0.92] tracking-[-0.055em] sm:mt-5 sm:text-[5.3rem] sm:leading-[0.9] sm:tracking-[-0.065em] lg:text-[6.25rem]">
                 Cloud
                 <span className="block text-gradient-green">&amp; Coffee</span>
               </h1>
-              <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-white/55 sm:text-base">
+              <p className="mt-4 text-sm font-semibold uppercase tracking-[0.16em] text-white/55 sm:mt-5 sm:text-base sm:tracking-[0.18em]">
                 {cloudConfessionsConfig.tagline}
               </p>
               <p className="mt-2 text-xs font-medium tracking-[0.04em] text-white/40">
                 {cloudConfessionsConfig.hostedBy}
               </p>
-              <p className="mt-8 max-w-2xl text-lg leading-8 text-white/58 sm:text-xl sm:leading-9">
+              <p className="mt-6 max-w-2xl text-base leading-7 text-white/58 sm:mt-8 sm:text-xl sm:leading-9">
                 {cloudConfessionsCopy.heroLead}
               </p>
 
-              <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-3">
+              <div className="mt-8 grid max-w-2xl gap-3 sm:mt-10 sm:grid-cols-3">
                 {eventFacts.map((fact) => (
                   <div
                     key={fact.label}
@@ -371,7 +371,7 @@ export default function CloudConfessionsLanding() {
                 ))}
               </div>
 
-              <div className="mt-12 flex flex-wrap items-center gap-x-5 gap-y-3 sm:mt-14">
+              <div className="mt-8 flex flex-col items-start gap-3 sm:mt-12 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-5 sm:gap-y-3">
                 <a
                   href="#registro"
                   className="inline-flex items-center gap-3 rounded-full bg-cactus-green px-5 py-3 text-sm font-bold text-white shadow-[0_8px_30px_rgba(127,155,40,0.24)] transition hover:bg-cactus-green-light"
@@ -379,7 +379,7 @@ export default function CloudConfessionsLanding() {
                   {cloudConfessionsConfig.ctaLabel}
                   <span aria-hidden="true">→</span>
                 </a>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/32">
+                <p className="max-w-[16rem] text-[11px] uppercase leading-4 tracking-[0.12em] text-white/32 sm:max-w-none sm:text-xs sm:tracking-[0.16em]">
                   {cloudConfessionsConfig.limitedSpots
                     ? "Cupos limitados · Solicitud sujeta a aprobación"
                     : "Cupos disponibles"}
@@ -387,7 +387,7 @@ export default function CloudConfessionsLanding() {
               </div>
             </div>
 
-            <div className="mt-20 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 lg:hidden">
+            <div className="mt-12 flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.2em] text-white/25 sm:mt-20 lg:hidden">
               <span className="h-px w-12 bg-cactus-green/50" />
               Sigue explorando
             </div>

@@ -16,6 +16,7 @@ import {
 } from "@/lib/cloud-confessions/google-sheets";
 import { getCloudConfessionsTicketUrl } from "@/lib/cloud-confessions/qr";
 import { sendSolicitudRecibidaEmail } from "@/lib/cloud-confessions/registration-email";
+import { onCloudCoffeeRegistered } from "@/lib/cloud-confessions/email-flow";
 import type { CloudConfessionsRegistrationPayload } from "@/lib/cloud-confessions/types";
 import { validateRegistrationPayload } from "@/lib/cloud-confessions/validation";
 
@@ -152,7 +153,12 @@ export async function POST(request: Request) {
           registeredAt,
         }),
       },
-      unlinkListIds: [listIds.visited, listIds.incomplete, listIds.approved],
+      unlinkListIds: [
+        listIds.invited,
+        listIds.visited,
+        listIds.incomplete,
+        listIds.approved,
+      ],
     });
 
     if (!brevoResponse.ok) {
@@ -191,6 +197,8 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
+
+    await onCloudCoffeeRegistered(data.email);
 
     let sheetsSynced = false;
     let sheetsError: string | undefined;

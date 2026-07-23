@@ -10,6 +10,10 @@
  * 6. Copiar la URL /exec a CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL.
  * 7. Ejecutar una vez instalarActivadorOnEdit() (menú Cloud & Coffee o desde el editor).
  * 8. Ejecutar una vez ensureCalendarEvent() para crear el evento maestro.
+ * 9. Ejecutar una vez ensureInvitesAndJobsSheets() para crear hojas Invitados + ColaEmails.
+ *
+ * Hoja "Invitados": al poner un email (o menú Procesar invitados), llama al webhook de invitación.
+ * Hoja "ColaEmails": cola de correos diferidos (cron de Vercel).
  *
  * Al editar estado a "aprobado": genera QR vía webhook e invita al Calendar.
  * Al editar estado a "rechazado": actualiza Brevo/Sheets y retira la invitación.
@@ -18,9 +22,13 @@
 
 const CONFIG = {
   SHEET_NAME: "Registros",
+  INVITES_SHEET_NAME: "Invitados",
+  JOBS_SHEET_NAME: "ColaEmails",
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
+  INVITE_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-invite",
   ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
@@ -47,6 +55,27 @@ const CONFIG = {
     "checkin_at",
     "calendar_invited_at",
     "actualizado_at",
+  ],
+  INVITE_HEADERS: [
+    "email",
+    "nombre",
+    "apellido",
+    "empresa",
+    "cargo",
+    "estado",
+    "invitado_at",
+    "actualizado_at",
+  ],
+  JOB_HEADERS: [
+    "id",
+    "email",
+    "job_type",
+    "run_at",
+    "status",
+    "payload",
+    "created_at",
+    "processed_at",
+    "error",
   ],
 };
 
@@ -109,6 +138,28 @@ function doPost(e) {
           success: true,
           eventId: ensureCalendarEvent().getId(),
         });
+      case "enqueueEmailJob":
+        return jsonResponse({
+          success: true,
+          job: enqueueEmailJob(data),
+        });
+      case "listDueEmailJobs":
+        return jsonResponse({
+          success: true,
+          jobs: listDueEmailJobs(data.now),
+        });
+      case "completeEmailJob":
+        completeEmailJob(data);
+        return jsonResponse({ success: true });
+      case "cancelEmailJobs":
+        cancelEmailJobs(data.email, data.jobTypes || []);
+        return jsonResponse({ success: true });
+      case "upsertInvitee":
+        upsertInvitee(data);
+        return jsonResponse({ success: true });
+      case "markInviteeInvited":
+        markInviteeInvited(data.email, data.invitedAt);
+        return jsonResponse({ success: true });
       default:
         return jsonResponse({ success: false, error: "Acción no válida" });
     }
@@ -125,10 +176,29 @@ function onEdit(e) {
   if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return;
 
   const sheet = e.range.getSheet();
-  if (sheet.getName() !== CONFIG.SHEET_NAME) return;
-  if (e.range.getColumn() !== COL.STATUS || e.range.getRow() === 1) return;
-
+  const sheetName = sheet.getName();
   const rowNumber = e.range.getRow();
+  if (rowNumber === 1) return;
+
+  if (sheetName === CONFIG.INVITES_SHEET_NAME) {
+    // Columna email (1): al pegar/escribir un correo, invita.
+    if (e.range.getColumn() === 1) {
+      try {
+        processInviteRow_(rowNumber);
+      } catch (error) {
+        SpreadsheetApp.getActiveSpreadsheet().toast(
+          error && error.message ? error.message : "Error al invitar",
+          "Cloud & Coffee",
+          8,
+        );
+      }
+    }
+    return;
+  }
+
+  if (sheetName !== CONFIG.SHEET_NAME) return;
+  if (e.range.getColumn() !== COL.STATUS) return;
+
   const status = parseStatus(e.value);
   if (status !== "aprobado" && status !== "rechazado") return;
 
@@ -187,6 +257,8 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("Cloud & Coffee")
     .addItem("Instalar activador onEdit", "instalarActivadorOnEdit")
+    .addItem("Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
+    .addItem("Procesar invitados pendientes", "procesarInvitadosPendientes")
     .addItem("Crear/actualizar evento Calendar", "ensureCalendarEvent")
     .addToUi();
 }
@@ -606,4 +678,334 @@ function jsonResponse(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
     ContentService.MimeType.JSON,
   );
+}
+
+const INV = {
+  EMAIL: 1,
+  FIRST_NAME: 2,
+  LAST_NAME: 3,
+  COMPANY: 4,
+  JOB_TITLE: 5,
+  STATUS: 6,
+  INVITED_AT: 7,
+  UPDATED_AT: 8,
+};
+
+const JOB = {
+  ID: 1,
+  EMAIL: 2,
+  TYPE: 3,
+  RUN_AT: 4,
+  STATUS: 5,
+  PAYLOAD: 6,
+  CREATED_AT: 7,
+  PROCESSED_AT: 8,
+  ERROR: 9,
+};
+
+function ensureInvitesAndJobsSheets() {
+  getInvitesSheet();
+  getJobsSheet();
+  SpreadsheetApp.getUi().alert(
+    "Hojas listas: Invitados y ColaEmails. Pega emails en Invitados (columna A) para invitar.",
+  );
+}
+
+function getInvitesSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(CONFIG.INVITES_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(CONFIG.INVITES_SHEET_NAME);
+  }
+  const headers = sheet
+    .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
+    .getValues()[0];
+  const needsHeaders = CONFIG.INVITE_HEADERS.some(function (h, i) {
+    return String(headers[i] || "").trim() !== h;
+  });
+  if (needsHeaders) {
+    sheet
+      .getRange(1, 1, 1, CONFIG.INVITE_HEADERS.length)
+      .setValues([CONFIG.INVITE_HEADERS]);
+  }
+  return sheet;
+}
+
+function getJobsSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(CONFIG.JOBS_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(CONFIG.JOBS_SHEET_NAME);
+  }
+  const headers = sheet
+    .getRange(1, 1, 1, CONFIG.JOB_HEADERS.length)
+    .getValues()[0];
+  const needsHeaders = CONFIG.JOB_HEADERS.some(function (h, i) {
+    return String(headers[i] || "").trim() !== h;
+  });
+  if (needsHeaders) {
+    sheet
+      .getRange(1, 1, 1, CONFIG.JOB_HEADERS.length)
+      .setValues([CONFIG.JOB_HEADERS]);
+  }
+  return sheet;
+}
+
+function processInviteRow_(rowNumber) {
+  const sheet = getInvitesSheet();
+  const email = normalizeEmail(sheet.getRange(rowNumber, INV.EMAIL).getValue());
+  if (!email) return;
+
+  const estado = String(sheet.getRange(rowNumber, INV.STATUS).getValue() || "")
+    .trim()
+    .toLowerCase();
+  if (estado === "invitado") return;
+
+  const response = UrlFetchApp.fetch(CONFIG.INVITE_WEBHOOK_URL, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({
+      secret: CONFIG.SECRET,
+      email: email,
+      nombre: String(sheet.getRange(rowNumber, INV.FIRST_NAME).getValue() || ""),
+      apellido: String(sheet.getRange(rowNumber, INV.LAST_NAME).getValue() || ""),
+      empresa: String(sheet.getRange(rowNumber, INV.COMPANY).getValue() || ""),
+      cargo: String(sheet.getRange(rowNumber, INV.JOB_TITLE).getValue() || ""),
+    }),
+    muteHttpExceptions: true,
+  });
+
+  const statusCode = response.getResponseCode();
+  const body = response.getContentText();
+  if (statusCode < 200 || statusCode >= 300) {
+    throw new Error(
+      "Webhook invite falló (" +
+        statusCode +
+        ")" +
+        (body ? " · " + body : ""),
+    );
+  }
+
+  const now = new Date().toISOString();
+  sheet.getRange(rowNumber, INV.STATUS).setValue("invitado");
+  sheet.getRange(rowNumber, INV.INVITED_AT).setValue(now);
+  sheet.getRange(rowNumber, INV.UPDATED_AT).setValue(now);
+}
+
+function procesarInvitadosPendientes() {
+  const sheet = getInvitesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert("No hay filas en Invitados.");
+    return;
+  }
+
+  let ok = 0;
+  let fail = 0;
+  for (let row = 2; row <= lastRow; row += 1) {
+    const email = normalizeEmail(sheet.getRange(row, INV.EMAIL).getValue());
+    if (!email) continue;
+    const estado = String(sheet.getRange(row, INV.STATUS).getValue() || "")
+      .trim()
+      .toLowerCase();
+    if (estado === "invitado") continue;
+    try {
+      processInviteRow_(row);
+      ok += 1;
+    } catch (error) {
+      fail += 1;
+    }
+  }
+
+  SpreadsheetApp.getUi().alert(
+    "Invitados procesados: " + ok + " ok · " + fail + " con error.",
+  );
+}
+
+function upsertInvitee(data) {
+  const sheet = getInvitesSheet();
+  const email = normalizeEmail(data.email);
+  if (!email) return;
+
+  const lastRow = sheet.getLastRow();
+  let row = 0;
+  if (lastRow >= 2) {
+    const emails = sheet.getRange(2, INV.EMAIL, lastRow, INV.EMAIL).getValues();
+    for (let i = 0; i < emails.length; i += 1) {
+      if (normalizeEmail(emails[i][0]) === email) {
+        row = i + 2;
+        break;
+      }
+    }
+  }
+
+  const now = new Date().toISOString();
+  if (!row) {
+    sheet.appendRow([
+      email,
+      safeText(data.firstName),
+      safeText(data.lastName),
+      safeText(data.company),
+      safeText(data.jobTitle),
+      "",
+      "",
+      now,
+    ]);
+    return;
+  }
+
+  if (data.firstName) sheet.getRange(row, INV.FIRST_NAME).setValue(safeText(data.firstName));
+  if (data.lastName) sheet.getRange(row, INV.LAST_NAME).setValue(safeText(data.lastName));
+  if (data.company) sheet.getRange(row, INV.COMPANY).setValue(safeText(data.company));
+  if (data.jobTitle) sheet.getRange(row, INV.JOB_TITLE).setValue(safeText(data.jobTitle));
+  sheet.getRange(row, INV.UPDATED_AT).setValue(now);
+}
+
+function markInviteeInvited(email, invitedAt) {
+  const sheet = getInvitesSheet();
+  const normalized = normalizeEmail(email);
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const emails = sheet.getRange(2, INV.EMAIL, lastRow, INV.EMAIL).getValues();
+  for (let i = 0; i < emails.length; i += 1) {
+    if (normalizeEmail(emails[i][0]) === normalized) {
+      const row = i + 2;
+      sheet.getRange(row, INV.STATUS).setValue("invitado");
+      sheet.getRange(row, INV.INVITED_AT).setValue(invitedAt || new Date().toISOString());
+      sheet.getRange(row, INV.UPDATED_AT).setValue(new Date().toISOString());
+      return;
+    }
+  }
+}
+
+function enqueueEmailJob(data) {
+  const sheet = getJobsSheet();
+  const id = Utilities.getUuid();
+  const now = new Date().toISOString();
+  const email = normalizeEmail(data.email);
+  const jobType = String(data.jobType || "").trim();
+
+  // Evita duplicar el mismo job pendiente para el mismo email+tipo.
+  const lastRow = sheet.getLastRow();
+  if (lastRow >= 2) {
+    const values = sheet
+      .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+      .getValues();
+    for (let i = 0; i < values.length; i += 1) {
+      const row = values[i];
+      if (
+        normalizeEmail(row[JOB.EMAIL - 1]) === email &&
+        String(row[JOB.TYPE - 1]) === jobType &&
+        String(row[JOB.STATUS - 1]) === "pending"
+      ) {
+        sheet.getRange(i + 2, JOB.RUN_AT).setValue(String(data.runAt || ""));
+        sheet.getRange(i + 2, JOB.PAYLOAD).setValue(String(data.payload || ""));
+        return {
+          id: String(row[JOB.ID - 1]),
+          email: email,
+          jobType: jobType,
+          runAt: String(data.runAt || ""),
+          status: "pending",
+          payload: String(data.payload || ""),
+        };
+      }
+    }
+  }
+
+  sheet.appendRow([
+    id,
+    email,
+    jobType,
+    String(data.runAt || ""),
+    "pending",
+    String(data.payload || ""),
+    now,
+    "",
+    "",
+  ]);
+
+  return {
+    id: id,
+    email: email,
+    jobType: jobType,
+    runAt: String(data.runAt || ""),
+    status: "pending",
+    payload: String(data.payload || ""),
+    createdAt: now,
+  };
+}
+
+function listDueEmailJobs(nowIso) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const now = new Date(nowIso || new Date().toISOString()).getTime();
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+  const jobs = [];
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[JOB.STATUS - 1]) !== "pending") continue;
+    const runAt = new Date(String(row[JOB.RUN_AT - 1] || "")).getTime();
+    if (!runAt || runAt > now) continue;
+    jobs.push({
+      id: String(row[JOB.ID - 1]),
+      email: normalizeEmail(row[JOB.EMAIL - 1]),
+      jobType: String(row[JOB.TYPE - 1]),
+      runAt: String(row[JOB.RUN_AT - 1]),
+      status: "pending",
+      payload: String(row[JOB.PAYLOAD - 1] || ""),
+      createdAt: String(row[JOB.CREATED_AT - 1] || ""),
+    });
+  }
+
+  return jobs;
+}
+
+function completeEmailJob(data) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const id = String(data.id || "");
+  const values = sheet.getRange(2, JOB.ID, lastRow, JOB.ID).getValues();
+  for (let i = 0; i < values.length; i += 1) {
+    if (String(values[i][0]) === id) {
+      const row = i + 2;
+      sheet.getRange(row, JOB.STATUS).setValue(String(data.status || "done"));
+      sheet.getRange(row, JOB.PROCESSED_AT).setValue(new Date().toISOString());
+      sheet.getRange(row, JOB.ERROR).setValue(String(data.error || ""));
+      return;
+    }
+  }
+}
+
+function cancelEmailJobs(email, jobTypes) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const normalized = normalizeEmail(email);
+  const types = (jobTypes || []).map(function (t) {
+    return String(t);
+  });
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[JOB.STATUS - 1]) !== "pending") continue;
+    if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
+    if (types.length && types.indexOf(String(row[JOB.TYPE - 1])) === -1) {
+      continue;
+    }
+    const rowNumber = i + 2;
+    sheet.getRange(rowNumber, JOB.STATUS).setValue("cancelled");
+    sheet.getRange(rowNumber, JOB.PROCESSED_AT).setValue(new Date().toISOString());
+  }
 }

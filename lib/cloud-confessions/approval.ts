@@ -1,9 +1,11 @@
 import {
+  addCloudConfessionsContactsToList,
   buildCloudConfessionsAttributes,
   buildSharedContactAttributes,
   getCloudConfessionsListIds,
   upsertCloudConfessionsContact,
 } from "@/lib/cloud-confessions/brevo";
+import { onCloudCoffeeApproved } from "@/lib/cloud-confessions/email-flow";
 import {
   findCloudConfessionsAttendeeByEmail,
   isCloudConfessionsGoogleSheetsConfigured,
@@ -21,6 +23,7 @@ export interface CloudConfessionsApprovalResult {
   message: string;
   qrImageUrl?: string;
   ticketUrl?: string;
+  emailSent?: boolean;
 }
 
 export async function processCloudConfessionsApprovalByEmail(
@@ -63,6 +66,22 @@ export async function processCloudConfessionsApprovalByEmail(
     ? getCloudConfessionsTicketUrl(qrToken)
     : undefined;
 
+  const unlinkListIds =
+    status === "approved"
+      ? [
+          listIds.invited,
+          listIds.visited,
+          listIds.incomplete,
+          listIds.registered,
+        ]
+      : [
+          listIds.invited,
+          listIds.visited,
+          listIds.incomplete,
+          listIds.registered,
+          listIds.approved,
+        ];
+
   const response = await upsertCloudConfessionsContact({
     email: attendee.email,
     attributes: {
@@ -84,15 +103,20 @@ export async function processCloudConfessionsApprovalByEmail(
         ...(status === "approved" ? { checkedIn: false } : {}),
       }),
     },
-    listIds: status === "approved" ? [listIds.approved] : undefined,
-    unlinkListIds:
-      status === "approved"
-        ? [listIds.registered]
-        : [listIds.registered, listIds.approved],
+    unlinkListIds,
   });
 
   if (!response.ok) {
     throw new Error("No se pudo actualizar el estado en Brevo");
+  }
+
+  if (status === "approved") {
+    const add = await addCloudConfessionsContactsToList(listIds.approved, [
+      attendee.email,
+    ]);
+    if (!add.ok) {
+      throw new Error("No se pudo añadir el contacto a la lista de aprobados");
+    }
   }
 
   await updateCloudConfessionsAttendeeRow(attendee.rowNumber, {
@@ -102,14 +126,25 @@ export async function processCloudConfessionsApprovalByEmail(
     updatedAt: now,
   });
 
+  let emailSent = false;
+  if (status === "approved" && qrToken) {
+    const mail = await onCloudCoffeeApproved({
+      email: attendee.email,
+      firstName: attendee.firstName,
+      qrToken,
+    });
+    emailSent = mail.emailSent;
+  }
+
   return {
     email: attendee.email,
     status,
     message:
       status === "approved"
-        ? "Solicitud aprobada, QR generado y sincronizado"
+        ? "Solicitud aprobada, QR generado, correo enviado y sincronizado"
         : "Solicitud rechazada y sincronizada",
     ...(qrImageUrl ? { qrImageUrl } : {}),
     ...(ticketUrl ? { ticketUrl } : {}),
+    ...(status === "approved" ? { emailSent } : {}),
   };
 }

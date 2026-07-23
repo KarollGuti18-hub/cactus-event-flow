@@ -22,7 +22,7 @@ export function buildSolicitudRecibidaHtml(firstName: string): string {
   <title>Recibimos tu solicitud para Cloud &amp; Coffee</title>
 </head>
 <body style="margin:0;background:#f4f4f5;color:#ffffff;font-family:Arial,Helvetica,sans-serif;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Estamos revisando tu cupo para Cloud & Coffee el 30 de julio.</div>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Te confirmaremos tu cupo para Cloud & Coffee el 30 de julio.</div>
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f4f5;">
     <tr><td align="center" style="padding:32px 16px;">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#151518;border-radius:24px;">
@@ -32,10 +32,10 @@ export function buildSolicitudRecibidaHtml(firstName: string): string {
         <tr><td style="border:0;background:#151518;padding:28px 36px 40px;text-align:center;">
           <div style="display:inline-block;width:58px;height:58px;border-radius:50%;background:#252d15;color:#9ab83a;font-size:30px;line-height:58px;">✓</div>
           <p style="margin:24px 0 18px;color:#9ab83a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Solicitud recibida</p>
-          <h1 style="margin:0 0 22px;font-size:34px;line-height:1.12;letter-spacing:-1.3px;">Ya tenemos tus datos</h1>
+          <h1 style="margin:0 0 22px;font-size:34px;line-height:1.12;letter-spacing:-1.3px;">Recibimos tu solicitud</h1>
           <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${name},</p>
-          <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Recibimos tu solicitud para Cloud &amp; Coffee. Nuestro equipo la revisará y te confirmará el cupo próximamente.</p>
-          <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Mientras tanto no necesitas hacer nada. Si eres aprobado, recibirás tu entrada con QR.</p>
+          <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Gracias por pedirnos tu cupo para Cloud &amp; Coffee. Nuestro equipo te confirmará pronto.</p>
+          <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Mientras tanto no necesitas hacer nada. Si te confirmamos el cupo, recibirás tu entrada con QR.</p>
           <div style="border:1px solid #2a2b2d;border-radius:16px;background:#0f0f11;padding:18px;color:#fff;font-size:14px;line-height:1.8;">Jueves 30 de julio · 7:00 – 9:00 a. m.<br>Cerca al Ágora<br><span style="color:#a9a9ad;font-size:13px;">La dirección exacta se comparte al confirmar tu cupo.</span></div>
         </td></tr>
         <tr><td style="padding:8px 36px 28px;color:#77777c;font-size:11px;line-height:1.6;">Cloud &amp; Coffee · Coffee · Conversations · Cloud<br>Hosted by C4c7Ops</td></tr>
