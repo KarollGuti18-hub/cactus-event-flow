@@ -227,10 +227,25 @@ export async function POST(request: Request) {
           errorType: error instanceof Error ? error.name : "UnknownError",
           message: sheetsError,
         });
+        return NextResponse.json(
+          {
+            error:
+              "No pudimos guardar tu solicitud en Sheets. Revisa la pestaña Registros (encabezados) e inténtalo de nuevo.",
+            sheetsError,
+          },
+          { status: 502 },
+        );
       }
     } else {
       sheetsError =
         "Faltan CLOUD_CONFESSIONS_GOOGLE_APPS_SCRIPT_URL o CLOUD_CONFESSIONS_SHEETS_WEBHOOK_SECRET en Vercel";
+      return NextResponse.json(
+        {
+          error: "Registro no configurado en Sheets",
+          sheetsError,
+        },
+        { status: 500 },
+      );
     }
 
     // El correo lo enviamos por API transaccional: las automations de "added to list"

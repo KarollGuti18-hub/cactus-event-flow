@@ -28,7 +28,7 @@ const CONFIG = {
   SHEET_NAME: "Registros",
   INVITES_SHEET_NAME: "Invitados",
   JOBS_SHEET_NAME: "ColaEmails",
-  SECRET: "reemplazar-con-secreto-seguro",
+  SECRET: "9fed047498b8d0e7c9ebfa659bb4aa93a639a6506bc7e54c622c85b32101682e",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
   INVITE_WEBHOOK_URL:
@@ -290,6 +290,7 @@ function onOpen() {
     .addItem("2. Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
     .addItem("3. Procesar invitados", "procesarInvitadosPendientes")
     .addItem("4. Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
+    .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
 }
@@ -350,8 +351,6 @@ function ensureHeaders(sheet) {
   }
 
   // Migración desde el layout anterior (sin calendar_invited_at).
-  // Antes: ... checkin_at | actualizado_at
-  // Ahora: ... checkin_at | calendar_invited_at | actualizado_at
   if (
     current[COL.CHECKED_IN_AT - 1] === "checkin_at" &&
     current[COL.CALENDAR_INVITED_AT - 1] === "actualizado_at" &&
@@ -363,7 +362,6 @@ function ensureHeaders(sheet) {
     return;
   }
 
-  // Si calendar_invited_at quedó al final por error, lo reordenamos.
   if (
     current[COL.CHECKED_IN_AT - 1] === "checkin_at" &&
     current[COL.CALENDAR_INVITED_AT - 1] === "actualizado_at" &&
@@ -384,6 +382,7 @@ function ensureHeaders(sheet) {
     return;
   }
 
+  let needsRewrite = false;
   for (let index = 0; index < needed; index += 1) {
     const expected = CONFIG.HEADERS[index];
     const actual = current[index] || "";
@@ -394,18 +393,24 @@ function ensureHeaders(sheet) {
     }
 
     if (actual !== expected) {
-      throw new Error(
-        "Las columnas de la pestaña Registros no coinciden. Esperado '" +
-          expected +
-          "' en columna " +
-          (index + 1) +
-          ", encontrado '" +
-          actual +
-          "'. Orden correcto: " +
-          CONFIG.HEADERS.join(", "),
-      );
+      // Encabezado corrupto (p. ej. pegaron una fecha en la fila 1).
+      needsRewrite = true;
+      break;
     }
   }
+
+  if (needsRewrite) {
+    range.setValues([CONFIG.HEADERS]);
+  }
+}
+
+/** Menú: repara la fila de encabezados de Registros si se dañó. */
+function repararEncabezadosRegistros() {
+  const sheet = getSheet();
+  sheet.getRange(1, 1, 1, CONFIG.HEADERS.length).setValues([CONFIG.HEADERS]);
+  SpreadsheetApp.getUi().alert(
+    "Encabezados de Registros reparados.\nVuelve a enviar el formulario o usa Procesar si hace falta.",
+  );
 }
 
 function normalizeEmail(value) {
