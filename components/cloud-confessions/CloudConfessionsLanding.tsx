@@ -8,6 +8,7 @@ import {
   cloudConfessionsCopy,
   type CloudConfessionsOrigin,
 } from "@/lib/cloud-confessions/config";
+import { decodeReferralCode } from "@/lib/cloud-confessions/referral";
 import {
   isValidContactNumber,
   normalizeContactNumber,
@@ -79,6 +80,7 @@ export default function CloudConfessionsLanding() {
   const [submitError, setSubmitError] = useState("");
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
   const [origin, setOrigin] = useState<CloudConfessionsOrigin>("landing");
+  const [referredBy, setReferredBy] = useState("");
   const submitLockRef = useRef(false);
 
   function validateForm(): FormErrors {
@@ -142,6 +144,7 @@ export default function CloudConfessionsLanding() {
           telefono: formData.telefono,
           consent: formData.consentimiento,
           origin,
+          referredBy,
         }),
       });
 
@@ -183,6 +186,9 @@ export default function CloudConfessionsLanding() {
     const email = params.get("email")?.trim() ?? "";
     const firstName = params.get("firstname")?.trim() ?? "";
     const lastName = params.get("lastname")?.trim() ?? "";
+
+    const referrer = decodeReferralCode(params.get("ref") ?? "");
+    if (referrer) setReferredBy(referrer);
 
     if (!isValidEmail(email)) return;
 

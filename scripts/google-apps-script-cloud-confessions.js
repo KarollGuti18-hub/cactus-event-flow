@@ -63,6 +63,7 @@ const CONFIG = {
     "checkin_at",
     "calendar_invited_at",
     "actualizado_at",
+    "referido_por",
   ],
   INVITE_HEADERS: [
     "Nombre",
@@ -116,6 +117,7 @@ const COL = {
   CHECKED_IN_AT: 15,
   CALENDAR_INVITED_AT: 16,
   UPDATED_AT: 17,
+  REFERRED_BY: 18,
 };
 
 function doPost(e) {
@@ -536,6 +538,7 @@ function rowToAttendee(rowNumber, values) {
     checkedInAt: String(values[COL.CHECKED_IN_AT - 1] || ""),
     calendarInvitedAt: String(values[COL.CALENDAR_INVITED_AT - 1] || ""),
     updatedAt: String(values[COL.UPDATED_AT - 1] || ""),
+    referredBy: normalizeEmail(values[COL.REFERRED_BY - 1]),
   };
 }
 
@@ -591,6 +594,10 @@ function upsertRegistration(data) {
     const status = existing && !isReopeningRejected
       ? existing.status
       : "pendiente_aprobacion";
+    // Referido: conserva quién invitó primero; no lo pisa un re-registro sin ref.
+    const referredBy =
+      normalizeEmail(data.referredBy) ||
+      (existing ? normalizeEmail(existing.referredBy) : "");
 
     const values = [
       id,
@@ -610,6 +617,7 @@ function upsertRegistration(data) {
       isReopeningRejected ? "" : existing ? existing.checkedInAt : "",
       isReopeningRejected ? "" : existing ? existing.calendarInvitedAt : "",
       now,
+      referredBy,
     ];
 
     let rowNumber;
@@ -1685,8 +1693,8 @@ function resetTestContactSheets_(email) {
     registros.deleteRow(attendee.rowNumber);
   }
 
-  // Cola → cancelar pendientes
-  cancelEmailJobs(normalized, []);
+  // Cola → borrar historial completo para poder repetir el flujo
+  deleteEmailJobs_(normalized);
 }
 
 function resetTestContactBrevo_(email) {
@@ -1715,20 +1723,37 @@ function enqueueEmailJob(data) {
   const now = new Date().toISOString();
   const email = normalizeEmail(data.email);
   const jobType = String(data.jobType || "").trim();
+  // once: un solo envío por contacto en toda la vida del evento (no reencolar si ya salió).
+  const once = data.once === true || String(data.once) === "true";
 
   // Evita duplicar el mismo job pendiente para el mismo email+tipo.
   const lastRow = sheet.getLastRow();
   if (lastRow >= 2) {
     const values = sheet
-      .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+      .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
       .getValues();
     for (let i = 0; i < values.length; i += 1) {
       const row = values[i];
       if (
-        normalizeEmail(row[JOB.EMAIL - 1]) === email &&
-        String(row[JOB.TYPE - 1]) === jobType &&
-        String(row[JOB.STATUS - 1]) === "pending"
+        normalizeEmail(row[JOB.EMAIL - 1]) !== email ||
+        String(row[JOB.TYPE - 1]) !== jobType
       ) {
+        continue;
+      }
+
+      const status = String(row[JOB.STATUS - 1]);
+      if (once && (status === "pending" || status === "done")) {
+        return {
+          id: String(row[JOB.ID - 1]),
+          email: email,
+          jobType: jobType,
+          runAt: String(row[JOB.RUN_AT - 1]),
+          status: status,
+          payload: String(row[JOB.PAYLOAD - 1] || ""),
+        };
+      }
+
+      if (status === "pending") {
         sheet.getRange(i + 2, JOB.RUN_AT).setValue(String(data.runAt || ""));
         sheet.getRange(i + 2, JOB.PAYLOAD).setValue(String(data.payload || ""));
         return {
@@ -1773,7 +1798,7 @@ function listDueEmailJobs(nowIso) {
 
   const now = new Date(nowIso || new Date().toISOString()).getTime();
   const values = sheet
-    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
     .getValues();
   const jobs = [];
 
@@ -1802,7 +1827,7 @@ function completeEmailJob(data) {
   if (lastRow < 2) return;
 
   const id = String(data.id || "");
-  const values = sheet.getRange(2, JOB.ID, lastRow, JOB.ID).getValues();
+  const values = sheet.getRange(2, JOB.ID, lastRow - 1, 1).getValues();
   for (let i = 0; i < values.length; i += 1) {
     if (String(values[i][0]) === id) {
       const row = i + 2;
@@ -1824,7 +1849,7 @@ function cancelEmailJobs(email, jobTypes) {
     return String(t);
   });
   const values = sheet
-    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
     .getValues();
 
   for (let i = 0; i < values.length; i += 1) {
@@ -1837,5 +1862,22 @@ function cancelEmailJobs(email, jobTypes) {
     const rowNumber = i + 2;
     sheet.getRange(rowNumber, JOB.STATUS).setValue("cancelled");
     sheet.getRange(rowNumber, JOB.PROCESSED_AT).setValue(new Date().toISOString());
+  }
+}
+
+/** Borra todo el historial de cola de un correo (para poder repetir pruebas). */
+function deleteEmailJobs_(email) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+
+  const normalized = normalizeEmail(email);
+  const values = sheet
+    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = values.length - 1; i >= 0; i -= 1) {
+    if (normalizeEmail(values[i][JOB.EMAIL - 1]) !== normalized) continue;
+    sheet.deleteRow(i + 2);
   }
 }

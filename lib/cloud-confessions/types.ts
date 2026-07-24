@@ -14,6 +14,7 @@ export interface CloudConfessionsRegistrationPayload {
   telefono: string;
   consent: boolean;
   origin: CloudConfessionsOrigin;
+  referredBy?: string;
 }
 
 export interface CloudConfessionsIncompletePayload {
@@ -42,6 +43,7 @@ export interface CloudConfessionsRegistrationInput {
   telefono: string;
   consent: true;
   origin: CloudConfessionsOrigin;
+  referredBy: string;
 }
 
 export interface CloudConfessionsAttendeeRecord {
@@ -63,4 +65,5 @@ export interface CloudConfessionsAttendeeRecord {
   checkedInAt: string;
   calendarInvitedAt: string;
   updatedAt: string;
+  referredBy: string;
 }

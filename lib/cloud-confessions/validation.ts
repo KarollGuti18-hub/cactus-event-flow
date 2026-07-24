@@ -57,6 +57,13 @@ export function validateRegistrationPayload(
   const company = sanitizeText(payload.company, TEXT_LIMITS.company);
   const jobTitle = sanitizeText(payload.jobTitle, TEXT_LIMITS.jobTitle);
   const telefono = normalizeContactNumber(payload.telefono);
+  const referredByRaw =
+    typeof payload.referredBy === "string"
+      ? normalizeEmail(payload.referredBy).slice(0, 254)
+      : "";
+  // Ignora auto-referidos y valores no-email.
+  const referredBy =
+    isValidEmail(referredByRaw) && referredByRaw !== email ? referredByRaw : "";
 
   if (!firstName) return { error: "El nombre es requerido" };
   if (!lastName) return { error: "Los apellidos son requeridos" };
@@ -80,6 +87,7 @@ export function validateRegistrationPayload(
       telefono,
       consent: true,
       origin: normalizeOrigin(payload.origin),
+      referredBy,
     },
   };
 }

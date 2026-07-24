@@ -79,6 +79,7 @@ export async function upsertCloudConfessionsRegistration(
     telefono: input.telefono,
     consent: input.consent,
     origin: input.origin,
+    referredBy: input.referredBy,
     registeredAt,
   });
 

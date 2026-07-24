@@ -88,6 +88,8 @@ export async function enqueueCloudCoffeeEmailJob(input: {
   jobType: CloudCoffeeEmailJobType;
   runAt: string;
   payload?: Record<string, string>;
+  /** No reencolar si ese contacto ya recibió (o tiene agendado) este tipo de correo. */
+  once?: boolean;
 }): Promise<void> {
   if (!isCloudCoffeeJobsConfigured()) return;
 
@@ -96,6 +98,7 @@ export async function enqueueCloudCoffeeEmailJob(input: {
     jobType: input.jobType,
     runAt: input.runAt,
     payload: input.payload ? JSON.stringify(input.payload) : "",
+    once: input.once === true,
   });
 }
 

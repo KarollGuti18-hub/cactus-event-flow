@@ -8,6 +8,8 @@ import {
   INCOMPLETE_EMAIL_DELAY_MS,
   REMINDER_1_AT_ISO,
   REMINDER_2_AT_ISO,
+  SHARE_INVITE_CUTOFF_AT_ISO,
+  SHARE_INVITE_DELAY_MS,
   VISITED_EMAIL_DELAY_MS,
   addMs,
   type CloudCoffeeEmailJobType,
@@ -33,6 +35,7 @@ import {
   sendCloudCoffeeInviteEmail,
   sendCloudCoffeeReminder1Email,
   sendCloudCoffeeReminder2Email,
+  sendCloudCoffeeShareInviteEmail,
   sendCloudCoffeeVisitedEmail,
 } from "@/lib/cloud-confessions/transactional-emails";
 import { buildSharedContactAttributes } from "@/lib/cloud-confessions/brevo";
@@ -260,6 +263,20 @@ export async function onCloudCoffeeApproved(input: {
   });
 
   const now = Date.now();
+  const shareInviteAt = addMs(new Date(), SHARE_INVITE_DELAY_MS);
+  if (
+    new Date(shareInviteAt).getTime() <=
+    new Date(SHARE_INVITE_CUTOFF_AT_ISO).getTime()
+  ) {
+    await enqueueCloudCoffeeEmailJob({
+      email,
+      jobType: "share_invite",
+      runAt: shareInviteAt,
+      payload: { firstName: input.firstName },
+      once: true,
+    });
+  }
+
   if (new Date(REMINDER_1_AT_ISO).getTime() > now) {
     await enqueueCloudCoffeeEmailJob({
       email,
@@ -414,6 +431,23 @@ async function processOneJob(job: CloudCoffeeEmailJob): Promise<void> {
       return;
     }
     await completeCloudCoffeeEmailJob(job.id, { status: "done" });
+    return;
+  }
+
+  if (job.jobType === "share_invite") {
+    const tooLate =
+      Date.now() > new Date(SHARE_INVITE_CUTOFF_AT_ISO).getTime();
+    if (status !== "approved" || tooLate) {
+      await completeCloudCoffeeEmailJob(job.id, { status: "cancelled" });
+      return;
+    }
+    const result = await sendCloudCoffeeShareInviteEmail({ email, firstName });
+    await completeCloudCoffeeEmailJob(
+      job.id,
+      result.sent
+        ? { status: "done" }
+        : { status: "failed", error: result.error },
+    );
     return;
   }
 

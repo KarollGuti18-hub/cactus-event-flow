@@ -4,6 +4,7 @@ import {
 } from "@/lib/brevo";
 import { getAppUrl } from "@/lib/app-url";
 import { cloudConfessionsEmailConfig } from "@/lib/cloud-confessions/email-copy";
+import { encodeReferralCode } from "@/lib/cloud-confessions/referral";
 
 function escapeHtml(value: string): string {
   return value
@@ -311,28 +312,34 @@ export async function sendCloudCoffeeReminder2Email(input: {
   return send({ email: input.email, name, subject, preview, html });
 }
 
-/** Campaña manual: pide a registrados/aprobados que compartan la invitación. */
+/**
+ * Referidos: se envía a aprobados 4 h después de confirmar cupo.
+ * Un solo mensaje: invita a alguien y pásale tu link personal (?ref=).
+ */
 export async function sendCloudCoffeeShareInviteEmail(input: {
   email: string;
   firstName: string;
 }): Promise<{ sent: boolean; error?: string }> {
   const name = input.firstName.trim() || "hola";
-  const shareUrl = `${getAppUrl()}/cloud-and-coffee`;
+  const refCode = encodeReferralCode(input.email);
+  const shareUrl = refCode
+    ? `${getAppUrl()}/cloud-and-coffee?ref=${refCode}`
+    : `${getAppUrl()}/cloud-and-coffee`;
   const subject = "Invita a alguien y te regalamos una camiseta C4c7Ops";
   const preview =
-    "Comparte Cloud & Coffee con un developer de otra empresa y gana una camiseta.";
+    "Pásale tu link a un developer de otra empresa. Si se registra, te regalamos una camiseta.";
+
   const html = wrapEmail({
     preview,
     title: subject,
     bodyHtml: `
-      <p style="margin:0 0 18px;color:#9ab83a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Para quienes ya van</p>
       <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Traes a alguien más?</h1>
       <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Ya estás en Cloud &amp; Coffee. Si conoces a un developer de <strong style="color:#fff;">otra empresa</strong> que también va al Summit, compártele la invitación.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si esa persona se registra, <strong style="color:#fff;">te regalamos una camiseta C4c7Ops</strong>.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Pásale este link para que se registre con sus datos:</p>
-      ${ctaButton(shareUrl, "Compartir invitación")}
-      <p style="margin:24px 0 0;color:#77777c;font-size:13px;line-height:1.7;">Cuando se registre, responde este correo con tu nombre y empresa, y el nombre/empresa de tu invitado. Así coordinamos la camiseta.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Ya estás en Cloud &amp; Coffee. Si conoces a un developer de <strong style="color:#fff;">otra empresa</strong> que también va al Summit, invítalo.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si se registra con tu link, <strong style="color:#fff;">te regalamos una camiseta C4c7Ops</strong>.</p>
+      <p style="margin:0 0 4px;color:#a9a9ad;font-size:16px;line-height:1.7;">Pásale este link o ábrelo y compártelo:</p>
+      <p style="margin:0 0 4px;"><a href="${escapeHtml(shareUrl)}" style="color:#9ab83a;font-size:15px;font-weight:600;word-break:break-all;text-decoration:none;">${escapeHtml(shareUrl)}</a></p>
+      ${ctaButton(shareUrl, "Abrir mi link")}
     `,
   });
 
