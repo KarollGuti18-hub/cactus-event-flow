@@ -229,16 +229,58 @@ function onEdit(e) {
     return;
   }
 
-  if (e.range.getNumRows() !== 1 || e.range.getNumColumns() !== 1) return;
+  // Registros: permite pegar "aprobado"/"rechazado" en varias filas.
   if (sheetName !== CONFIG.SHEET_NAME) return;
-  const rowNumber = e.range.getRow();
-  if (rowNumber === 1) return;
   if (e.range.getColumn() !== COL.STATUS) return;
+  if (e.range.getNumColumns() !== 1) return;
 
-  const status = parseStatus(e.value);
-  if (status !== "aprobado" && status !== "rechazado") return;
+  const startRow = e.range.getRow();
+  const numRows = e.range.getNumRows();
+  const values = e.range.getValues();
+  let ok = 0;
+  let fail = 0;
+  const errors = [];
 
-  processStatusChange_(rowNumber, status);
+  for (let i = 0; i < numRows; i += 1) {
+    const rowNumber = startRow + i;
+    if (rowNumber === 1) continue;
+    const status = parseStatus(values[i][0]);
+    if (status !== "aprobado" && status !== "rechazado") continue;
+    try {
+      processStatusChange_(rowNumber, status);
+      ok += 1;
+      if (numRows > 1) {
+        Utilities.sleep(800);
+      }
+    } catch (error) {
+      fail += 1;
+      if (errors.length < 5) {
+        const email = normalizeEmail(
+          sheet.getRange(rowNumber, COL.EMAIL).getValue(),
+        );
+        errors.push(
+          (email || "fila " + rowNumber) +
+            ": " +
+            (error && error.message ? error.message : "error"),
+        );
+      }
+    }
+  }
+
+  if (ok + fail === 0) return;
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    ok + " ok · " + fail + " con error",
+    "Aprobaciones",
+    8,
+  );
+  if (numRows > 1 || fail > 0) {
+    let msg = "Estados procesados: " + ok + " ok · " + fail + " con error.";
+    if (errors.length) {
+      msg += "\n\n" + errors.join("\n");
+    }
+    SpreadsheetApp.getUi().alert(msg);
+  }
 }
 
 function processStatusChange_(rowNumber, status) {
@@ -309,6 +351,7 @@ function onOpen() {
     .addItem("Cancelar lotes automáticos", "cancelarLotesInvitados")
     .addItem("Probar invite (fila activa)", "probarInviteFilaActiva")
     .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
+    .addItem("Reprocesar aprobados sin QR", "reprocesarAprobadosSinQr")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
@@ -822,6 +865,55 @@ function removeGuestFromCalendar(email) {
   } catch (error) {
     // Silencioso
   }
+}
+
+/**
+ * Para filas con estado "aprobado" pero sin qr_token:
+ * vuelve a llamar el webhook (QR + mail + lista 15) y manda el .ics.
+ */
+function reprocesarAprobadosSinQr() {
+  const ui = SpreadsheetApp.getUi();
+  const needing = listNeedingProcessing();
+  if (!needing.length) {
+    ui.alert("No hay aprobados pendientes de QR.\nTodo lo marcado como aprobado ya tiene token.");
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Reprocesar aprobados sin QR",
+    "Hay " +
+      needing.length +
+      " fila(s) en aprobado sin QR.\nSe generará QR, correo de cupo y .ics de Calendar.\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  let ok = 0;
+  let fail = 0;
+  const errors = [];
+  for (let i = 0; i < needing.length; i += 1) {
+    const attendee = needing[i];
+    try {
+      processStatusChange_(attendee.rowNumber, "aprobado");
+      ok += 1;
+      Utilities.sleep(800);
+    } catch (error) {
+      fail += 1;
+      if (errors.length < 8) {
+        errors.push(
+          (attendee.email || "fila " + attendee.rowNumber) +
+            ": " +
+            (error && error.message ? error.message : "error"),
+        );
+      }
+    }
+  }
+
+  let msg = "Reprocesados: " + ok + " ok · " + fail + " con error.";
+  if (errors.length) {
+    msg += "\n\n" + errors.join("\n");
+  }
+  ui.alert(msg);
 }
 
 /** Reenvía el .ics al correo de la fila activa en Registros. */
