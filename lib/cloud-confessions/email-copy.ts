@@ -252,4 +252,28 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Insertar imagen del QR con {{ contact.CC_EVENT_QR_URL }}",
     ],
   },
+  {
+    id: "cc-share-invite",
+    name: "Comparte y gana camiseta",
+    brevoListId: 14,
+    trigger: "Campaña manual a listas 14 y/o 15 (registrados / aprobados)",
+    timing: "Manual",
+    stopConditions: ["No es automático del funnel"],
+    subject: "Invita a alguien y te regalamos una camiseta C4c7Ops",
+    previewText:
+      "Comparte Cloud & Coffee con un developer de otra empresa y gana una camiseta.",
+    ctaLabel: "Compartir invitación",
+    ctaUrl: cloudConfessionsEmailConfig.landingUrl,
+    body: [
+      "Hola {{ contact.NOMBRE }},",
+      "Ya estás dentro de Cloud & Coffee. ¿Nos ayudas a sumar a alguien más?",
+      "Si compartes la invitación con un developer de otra empresa y esa persona se registra, te regalamos una camiseta C4c7Ops.",
+      "Pásale este link (que ponga sus propios datos): https://www.c4c7ops.co/cloud-and-coffee",
+      "Cuando se registre, respóndenos este correo con tu nombre/empresa y el de tu invitado para coordinar la camiseta.",
+    ],
+    notes: [
+      "Usar link limpio de landing (sin email precargado).",
+      "Destinatarios: lista 14 y/o 15.",
+    ],
+  },
 ];
