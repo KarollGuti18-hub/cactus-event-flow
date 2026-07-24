@@ -14,8 +14,8 @@ export const VISITED_EMAIL_DELAY_MS = 2 * 60 * 60 * 1000;
 /** Correo “registro incompleto”: 2 horas */
 export const INCOMPLETE_EMAIL_DELAY_MS = 2 * 60 * 60 * 1000;
 
-/** Correo “comparte y gana camiseta” tras aprobación: 3 horas */
-export const SHARE_INVITE_DELAY_MS = 3 * 60 * 60 * 1000;
+/** Correo “comparte y gana camiseta” tras aprobación: 2 horas */
+export const SHARE_INVITE_DELAY_MS = 2 * 60 * 60 * 1000;
 
 /**
  * Tope para el correo de referidos · 29 jul 2026 12:00 Bogotá.
