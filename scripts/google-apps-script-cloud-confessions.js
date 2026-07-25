@@ -354,6 +354,7 @@ function onOpen() {
     .addItem("Probar invite (fila activa)", "probarInviteFilaActiva")
     .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Reprocesar aprobados sin QR", "reprocesarAprobadosSinQr")
+    .addItem("Agendar correo camiseta a aprobados", "agendarCorreoCamisetaAprobados")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
@@ -922,6 +923,99 @@ function reprocesarAprobadosSinQr() {
     msg += "\n\n" + errors.join("\n");
   }
   ui.alert(msg);
+}
+
+/**
+ * Agenda el correo de "invita y gana camiseta" a quienes ya están aprobados.
+ * No reenvía el QR: solo mete jobs share_invite en ColaEmails (uno por persona).
+ * El cron los manda 2 h después. Si ya tenían el job pending/done, se salta.
+ */
+function agendarCorreoCamisetaAprobados() {
+  const ui = SpreadsheetApp.getUi();
+  const cutoff = new Date("2026-07-29T12:00:00-05:00").getTime();
+  const delayMs = 2 * 60 * 60 * 1000;
+  const runAtMs = Date.now() + delayMs;
+
+  if (runAtMs > cutoff) {
+    ui.alert(
+      "Ya pasó el tope (29 jul 12:00).\nNo tiene sentido pedir referidos: el invitado no alcanzaría a registrarse.",
+    );
+    return;
+  }
+
+  const approved = getAllAttendees(getSheet()).filter(function (a) {
+    return a && a.status === "aprobado" && a.email;
+  });
+
+  if (!approved.length) {
+    ui.alert("No hay filas en estado aprobado.");
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Agendar correo camiseta",
+    "Hay " +
+      approved.length +
+      " aprobado(s).\nSe agenda el correo de camiseta para ~2 h (uno por persona; no se repite si ya salió).\nNo se reenvía el QR.\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const runAt = new Date(runAtMs).toISOString();
+  let queued = 0;
+  let skipped = 0;
+
+  for (let i = 0; i < approved.length; i += 1) {
+    const attendee = approved[i];
+    const before = findPendingOrDoneShareInvite_(attendee.email);
+    const job = enqueueEmailJob({
+      email: attendee.email,
+      jobType: "share_invite",
+      runAt: runAt,
+      payload: JSON.stringify({
+        firstName: attendee.firstName || "hola",
+      }),
+      once: true,
+    });
+    if (before) {
+      skipped += 1;
+    } else if (job && job.id) {
+      queued += 1;
+    }
+  }
+
+  ui.alert(
+    "Listo.\nAgendados nuevos: " +
+      queued +
+      "\nYa tenían el job (omitidos): " +
+      skipped +
+      "\n\nSalen cuando corra el cron, ~2 h después.\nRevisa la hoja ColaEmails (job_type = share_invite).",
+  );
+}
+
+function findPendingOrDoneShareInvite_(email) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const normalized = normalizeEmail(email);
+  const values = sheet
+    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
+    if (String(row[JOB.TYPE - 1]) !== "share_invite") continue;
+    const status = String(row[JOB.STATUS - 1]);
+    if (status === "pending" || status === "done") {
+      return {
+        id: String(row[JOB.ID - 1]),
+        status: status,
+      };
+    }
+  }
+  return null;
 }
 
 /** Reenvía el .ics al correo de la fila activa en Registros. */
