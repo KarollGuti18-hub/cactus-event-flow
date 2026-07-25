@@ -313,8 +313,8 @@ export async function sendCloudCoffeeReminder2Email(input: {
 }
 
 /**
- * Referidos: se envía a aprobados 4 h después de confirmar cupo.
- * Un solo mensaje: invita a alguien y pásale tu link personal (?ref=).
+ * Referidos: se envía a aprobados 2 h después de confirmar cupo.
+ * Pide un referido (posible cliente C4c7Ops) con link personal (?ref=).
  */
 export async function sendCloudCoffeeShareInviteEmail(input: {
   email: string;
@@ -325,18 +325,18 @@ export async function sendCloudCoffeeShareInviteEmail(input: {
   const shareUrl = refCode
     ? `${getAppUrl()}/cloud-and-coffee?ref=${refCode}`
     : `${getAppUrl()}/cloud-and-coffee`;
-  const subject = "Invita a alguien y te regalamos una camiseta C4c7Ops";
+  const subject = "Pásanos un referido developer y te damos un obsequio";
   const preview =
-    "Pásale tu link a un developer de otra empresa. Si se registra, te regalamos una camiseta.";
+    "Si conoces a un dev que pueda ser cliente de C4c7Ops, invítalo con tu link.";
 
   const html = wrapEmail({
     preview,
     title: subject,
     bodyHtml: `
-      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Traes a alguien más?</h1>
+      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Tienes un referido?</h1>
       <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Ya estás en Cloud &amp; Coffee. Si conoces a un developer de <strong style="color:#fff;">otra empresa</strong> que también va al Summit, invítalo.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si se registra con tu link, <strong style="color:#fff;">te regalamos una camiseta C4c7Ops</strong>.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Ya estás en Cloud &amp; Coffee. Si conoces a un <strong style="color:#fff;">developer que pueda ser cliente de C4c7Ops</strong>, pásanos el referido.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Invítalo con tu link. Si se registra, <strong style="color:#fff;">te damos un obsequio</strong>.</p>
       <p style="margin:0 0 4px;color:#a9a9ad;font-size:16px;line-height:1.7;">Pásale este link o ábrelo y compártelo:</p>
       <p style="margin:0 0 4px;"><a href="${escapeHtml(shareUrl)}" style="color:#9ab83a;font-size:15px;font-weight:600;word-break:break-all;text-decoration:none;">${escapeHtml(shareUrl)}</a></p>
       ${ctaButton(shareUrl, "Abrir mi link")}
