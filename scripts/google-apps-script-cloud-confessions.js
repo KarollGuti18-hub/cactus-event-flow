@@ -1000,7 +1000,7 @@ function findPendingOrDoneShareInvite_(email) {
 
   const normalized = normalizeEmail(email);
   const values = sheet
-    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
     .getValues();
 
   for (let i = 0; i < values.length; i += 1) {
@@ -1824,7 +1824,7 @@ function enqueueEmailJob(data) {
   const lastRow = sheet.getLastRow();
   if (lastRow >= 2) {
     const values = sheet
-      .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+      .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
       .getValues();
     for (let i = 0; i < values.length; i += 1) {
       const row = values[i];
@@ -1892,7 +1892,7 @@ function listDueEmailJobs(nowIso) {
 
   const now = new Date(nowIso || new Date().toISOString()).getTime();
   const values = sheet
-    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
     .getValues();
   const jobs = [];
 
@@ -1921,7 +1921,7 @@ function completeEmailJob(data) {
   if (lastRow < 2) return;
 
   const id = String(data.id || "");
-  const values = sheet.getRange(2, JOB.ID, lastRow - 1, 1).getValues();
+  const values = sheet.getRange(2, JOB.ID, lastRow, JOB.ID).getValues();
   for (let i = 0; i < values.length; i += 1) {
     if (String(values[i][0]) === id) {
       const row = i + 2;
@@ -1943,7 +1943,7 @@ function cancelEmailJobs(email, jobTypes) {
     return String(t);
   });
   const values = sheet
-    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
     .getValues();
 
   for (let i = 0; i < values.length; i += 1) {
@@ -1967,7 +1967,7 @@ function deleteEmailJobs_(email) {
 
   const normalized = normalizeEmail(email);
   const values = sheet
-    .getRange(2, 1, lastRow - 1, CONFIG.JOB_HEADERS.length)
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
     .getValues();
 
   for (let i = values.length - 1; i >= 0; i -= 1) {
