@@ -314,7 +314,7 @@ export async function sendCloudCoffeeReminder2Email(input: {
 
 /**
  * Referidos: se envía a aprobados 2 h después de confirmar cupo.
- * Pide un referido (posible cliente C4c7Ops) con link personal (?ref=).
+ * Link personal (?ref=). Si alguien se registra con ese link → obsequio.
  */
 export async function sendCloudCoffeeShareInviteEmail(input: {
   email: string;
@@ -325,21 +325,25 @@ export async function sendCloudCoffeeShareInviteEmail(input: {
   const shareUrl = refCode
     ? `${getAppUrl()}/cloud-and-coffee?ref=${refCode}`
     : `${getAppUrl()}/cloud-and-coffee`;
-  const subject = "Pásanos un referido developer y te damos un obsequio";
+  const subject = `${name}, ¿conoces a otro dev para Cloud & Coffee?`;
   const preview =
-    "Si conoces a un dev que pueda ser cliente de C4c7Ops, invítalo con tu link.";
+    "Compártele tu link. Si se registra, tendremos un obsequio para ti en el evento.";
 
   const html = wrapEmail({
     preview,
     title: subject,
     bodyHtml: `
-      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;color:#fff;">¿Tienes un referido?</h1>
+      <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;color:#fff;">¿Conoces a otro dev que disfrutaría Cloud &amp; Coffee?</h1>
       <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Ya estás en Cloud &amp; Coffee. Si conoces a un <strong style="color:#fff;">developer que pueda ser cliente de C4c7Ops</strong>, pásanos el referido.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Invítalo con tu link. Si se registra, <strong style="color:#fff;">te damos un obsequio</strong>.</p>
-      <p style="margin:0 0 4px;color:#a9a9ad;font-size:16px;line-height:1.7;">Pásale este link o ábrelo y compártelo:</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Tu cupo para Cloud &amp; Coffee ya está confirmado.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si conoces a otro developer de <strong style="color:#fff;">otra empresa</strong> que también vaya al AWS Summit Bogotá, compártele tu enlace personal para que pueda registrarse.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;">Si completa el registro usando tu link, <strong style="color:#fff;">tendremos un obsequio para ti durante el evento</strong>.</p>
+      <p style="margin:0 0 8px;color:#d8d8da;font-size:15px;font-weight:700;line-height:1.6;">Solo tienes que:</p>
+      <p style="margin:0 0 6px;color:#a9a9ad;font-size:15px;line-height:1.7;">1. Compartir tu enlace con un dev de otra empresa.</p>
+      <p style="margin:0 0 6px;color:#a9a9ad;font-size:15px;line-height:1.7;">2. Pedirle que complete el registro.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:15px;line-height:1.7;">3. Recibir tu obsequio en Cloud &amp; Coffee.</p>
       <p style="margin:0 0 4px;"><a href="${escapeHtml(shareUrl)}" style="color:#9ab83a;font-size:15px;font-weight:600;word-break:break-all;text-decoration:none;">${escapeHtml(shareUrl)}</a></p>
-      ${ctaButton(shareUrl, "Abrir mi link")}
+      ${ctaButton(shareUrl, "Compartir la invitación")}
     `,
   });
 
