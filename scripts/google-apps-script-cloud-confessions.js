@@ -37,6 +37,8 @@ const CONFIG = {
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-invite",
   RESET_TEST_WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-reset-test",
+  SHARE_INVITE_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-share-invite",
   ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
@@ -354,7 +356,7 @@ function onOpen() {
     .addItem("Probar invite (fila activa)", "probarInviteFilaActiva")
     .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Reprocesar aprobados sin QR", "reprocesarAprobadosSinQr")
-    .addItem("Agendar correo camiseta a aprobados", "agendarCorreoCamisetaAprobados")
+    .addItem("Enviar correo obsequio a aprobados (ya)", "enviarCorreoObsequioAprobados")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
@@ -926,17 +928,14 @@ function reprocesarAprobadosSinQr() {
 }
 
 /**
- * Agenda el correo de "invita y gana camiseta" a quienes ya están aprobados.
- * No reenvía el QR: solo mete jobs share_invite en ColaEmails (uno por persona).
- * El cron los manda 2 h después. Si ya tenían el job pending/done, se salta.
+ * Envía YA el correo de referidos/obsequio a quienes ya están aprobados.
+ * No reenvía el QR. Uno por persona (si ya salió done, se salta).
+ * Los nuevos aprobados siguen yendo con delay de 1 h vía cola + cron.
  */
-function agendarCorreoCamisetaAprobados() {
+function enviarCorreoObsequioAprobados() {
   const ui = SpreadsheetApp.getUi();
   const cutoff = new Date("2026-07-29T12:00:00-05:00").getTime();
-  const delayMs = 2 * 60 * 60 * 1000;
-  const runAtMs = Date.now() + delayMs;
-
-  if (runAtMs > cutoff) {
+  if (Date.now() > cutoff) {
     ui.alert(
       "Ya pasó el tope (29 jul 12:00).\nNo tiene sentido pedir referidos: el invitado no alcanzaría a registrarse.",
     );
@@ -952,48 +951,154 @@ function agendarCorreoCamisetaAprobados() {
     return;
   }
 
+  const toSend = [];
+  let skipped = 0;
+  for (let i = 0; i < approved.length; i += 1) {
+    const attendee = approved[i];
+    const existing = findShareInviteJob_(attendee.email);
+    if (existing && existing.status === "done") {
+      skipped += 1;
+      continue;
+    }
+    toSend.push({
+      email: attendee.email,
+      firstName: attendee.firstName || "hola",
+      existingJobId: existing ? existing.id : "",
+    });
+  }
+
+  if (!toSend.length) {
+    ui.alert(
+      "Nada que enviar.\nTodos los aprobados ya tienen el correo de obsequio en done (" +
+        skipped +
+        ").",
+    );
+    return;
+  }
+
   const confirm = ui.alert(
-    "Agendar correo camiseta",
-    "Hay " +
-      approved.length +
-      " aprobado(s).\nSe agenda el correo de camiseta para ~2 h (uno por persona; no se repite si ya salió).\nNo se reenvía el QR.\n\n¿Continuar?",
+    "Enviar correo obsequio",
+    "Se enviará AHORA a " +
+      toSend.length +
+      " aprobado(s).\nOmitidos (ya enviado): " +
+      skipped +
+      ".\nNo se reenvía el QR.\n\n¿Continuar?",
     ui.ButtonSet.YES_NO,
   );
   if (confirm !== ui.Button.YES) return;
 
-  const runAt = new Date(runAtMs).toISOString();
-  let queued = 0;
-  let skipped = 0;
+  let sent = 0;
+  let failed = 0;
+  const errors = [];
+  const chunkSize = 20;
 
-  for (let i = 0; i < approved.length; i += 1) {
-    const attendee = approved[i];
-    const before = findPendingOrDoneShareInvite_(attendee.email);
-    const job = enqueueEmailJob({
-      email: attendee.email,
-      jobType: "share_invite",
-      runAt: runAt,
-      payload: JSON.stringify({
-        firstName: attendee.firstName || "hola",
-      }),
-      once: true,
-    });
-    if (before) {
-      skipped += 1;
-    } else if (job && job.id) {
-      queued += 1;
+  for (let start = 0; start < toSend.length; start += chunkSize) {
+    const chunk = toSend.slice(start, start + chunkSize);
+    try {
+      const response = UrlFetchApp.fetch(CONFIG.SHARE_INVITE_WEBHOOK_URL, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify({
+          secret: getWebhookSecret_(),
+          attendees: chunk.map(function (item) {
+            return { email: item.email, firstName: item.firstName };
+          }),
+        }),
+        muteHttpExceptions: true,
+      });
+
+      const statusCode = response.getResponseCode();
+      const bodyText = response.getContentText();
+      let body = {};
+      try {
+        body = JSON.parse(bodyText);
+      } catch (e) {
+        body = {};
+      }
+
+      if (statusCode < 200 || statusCode >= 300 || body.success === false) {
+        failed += chunk.length;
+        if (errors.length < 8) {
+          errors.push(
+            "Lote " +
+              (start / chunkSize + 1) +
+              ": HTTP " +
+              statusCode +
+              (body.error ? " · " + body.error : ""),
+          );
+        }
+        continue;
+      }
+
+      const results = Array.isArray(body.results) ? body.results : [];
+      const byEmail = {};
+      for (let r = 0; r < results.length; r += 1) {
+        byEmail[normalizeEmail(results[r].email)] = results[r];
+      }
+
+      for (let c = 0; c < chunk.length; c += 1) {
+        const item = chunk[c];
+        const result = byEmail[normalizeEmail(item.email)];
+        const ok = result && result.sent === true;
+        const job = enqueueEmailJob({
+          email: item.email,
+          jobType: "share_invite",
+          runAt: new Date().toISOString(),
+          payload: JSON.stringify({ firstName: item.firstName }),
+          once: true,
+        });
+        if (job && job.id) {
+          completeEmailJob({
+            id: job.id,
+            status: ok ? "done" : "failed",
+            error: ok ? "" : (result && result.error) || "Envío falló",
+          });
+        }
+        if (ok) {
+          sent += 1;
+        } else {
+          failed += 1;
+          if (errors.length < 8) {
+            errors.push(
+              item.email +
+                ": " +
+                ((result && result.error) || "error al enviar"),
+            );
+          }
+        }
+      }
+    } catch (error) {
+      failed += chunk.length;
+      if (errors.length < 8) {
+        errors.push(
+          "Lote " +
+            (start / chunkSize + 1) +
+            ": " +
+            (error && error.message ? error.message : "error"),
+        );
+      }
     }
   }
 
-  ui.alert(
-    "Listo.\nAgendados nuevos: " +
-      queued +
-      "\nYa tenían el job (omitidos): " +
-      skipped +
-      "\n\nSalen cuando corra el cron, ~2 h después.\nRevisa la hoja ColaEmails (job_type = share_invite).",
-  );
+  let msg =
+    "Enviados ahora: " +
+    sent +
+    "\nFallidos: " +
+    failed +
+    "\nYa tenían done (omitidos): " +
+    skipped;
+  if (errors.length) {
+    msg += "\n\n" + errors.join("\n");
+  }
+  ui.alert(msg);
 }
 
-function findPendingOrDoneShareInvite_(email) {
+/** Compat: nombre viejo del menú por si quedó un activador cacheado. */
+function agendarCorreoCamisetaAprobados() {
+  enviarCorreoObsequioAprobados();
+}
+
+function findShareInviteJob_(email) {
   const sheet = getJobsSheet();
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return null;
@@ -1008,13 +1113,20 @@ function findPendingOrDoneShareInvite_(email) {
     if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
     if (String(row[JOB.TYPE - 1]) !== "share_invite") continue;
     const status = String(row[JOB.STATUS - 1]);
-    if (status === "pending" || status === "done") {
+    if (status === "pending" || status === "done" || status === "failed") {
       return {
         id: String(row[JOB.ID - 1]),
         status: status,
       };
     }
   }
+  return null;
+}
+
+function findPendingOrDoneShareInvite_(email) {
+  const job = findShareInviteJob_(email);
+  if (!job) return null;
+  if (job.status === "pending" || job.status === "done") return job;
   return null;
 }
 

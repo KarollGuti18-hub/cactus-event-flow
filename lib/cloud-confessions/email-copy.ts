@@ -256,8 +256,8 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
     id: "cc-share-invite",
     name: "Comparte y gana camiseta",
     brevoListId: 14,
-    trigger: "Automático 2 h después de quedar aprobado (lista 15)",
-    timing: "2 horas después de la aprobación · tope 29 jul 12:00",
+    trigger: "Automático 1 h después de quedar aprobado (lista 15)",
+    timing: "1 hora después de la aprobación · tope 29 jul 12:00",
     stopConditions: [
       "Solo si sigue en aprobado",
       "Uno por contacto (no se repite si reprocesas aprobaciones)",
@@ -279,7 +279,7 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
     notes: [
       "Copy tipo draft: otro dev + otra empresa + obsequio en el evento.",
       "El código ?ref= atribuye el referido en la columna referido_por de Registros.",
-      "Sale con el cron de la cola de correos, 2 h después de aprobar.",
+      "Sale con el cron de la cola de correos, 1 h después de aprobar.",
     ],
   },
 ];
