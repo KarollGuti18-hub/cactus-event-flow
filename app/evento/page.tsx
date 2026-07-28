@@ -519,7 +519,8 @@ export default function Home() {
       {/* ── Header ── */}
       <header className="fixed top-0 left-0 right-0 z-50 min-h-[var(--header-height)] border-b border-[#7F9B28]/20 bg-black/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[var(--header-height)] max-w-7xl items-center justify-between px-6 lg:px-8">
-          <button type="button" onClick={() => scrollTo("#hero")} className="flex min-w-0 shrink items-center py-2 cursor-pointer">
+          <button type="button" onClick={() => scrollTo("#hero")} className="flex min-w-0 shrink items-center gap-2.5 py-2 cursor-pointer">
+            <Image src="/c4c7ops-isotype.png" alt="" width={40} height={40} priority className="h-9 w-9 shrink-0 object-contain" />
             <Image src="/logo-c4c7ops-white.png" alt="C4C7OPS" width={168} height={44} priority className="h-8 w-auto max-w-[120px] object-contain sm:h-9 sm:max-w-none lg:h-10" />
           </button>
 

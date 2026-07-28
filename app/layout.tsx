@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: "C4C7OPS Tech Summit | IA, Cloud, AWS y Seguridad",
   description:
     "Evento presencial de C4C7OPS en Bogotá para líderes de negocio y equipos técnicos. IA, Cloud, AWS y Seguridad para empresas.",
+  icons: {
+    icon: [{ url: "/c4c7ops-isotype.png", type: "image/png" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({
