@@ -1,4 +1,7 @@
-import type { CloudCoffeeEmailJobType } from "@/lib/cloud-confessions/delays";
+import {
+  isRunAtPastHardCutoff,
+  type CloudCoffeeEmailJobType,
+} from "@/lib/cloud-confessions/delays";
 
 export interface CloudCoffeeEmailJob {
   id: string;
@@ -92,6 +95,15 @@ export async function enqueueCloudCoffeeEmailJob(input: {
   once?: boolean;
 }): Promise<void> {
   if (!isCloudCoffeeJobsConfigured()) return;
+
+  if (isRunAtPastHardCutoff(input.runAt)) {
+    console.info("Cloud & Coffee skip enqueue past hard cutoff", {
+      email: input.email,
+      jobType: input.jobType,
+      runAt: input.runAt,
+    });
+    return;
+  }
 
   await callJobsAppsScript("enqueueEmailJob", {
     email: input.email.trim().toLowerCase(),

@@ -6,12 +6,14 @@ import {
   FOLLOWUP_1_DELAY_MS,
   FOLLOWUP_2_DELAY_MS,
   INCOMPLETE_EMAIL_DELAY_MS,
+  EMAIL_SCHEDULE_HARD_CUTOFF_AT_ISO,
   REMINDER_1_AT_ISO,
   REMINDER_2_AT_ISO,
   SHARE_INVITE_CUTOFF_AT_ISO,
   SHARE_INVITE_DELAY_MS,
   VISITED_EMAIL_DELAY_MS,
   addMs,
+  isRunAtPastHardCutoff,
   type CloudCoffeeEmailJobType,
 } from "@/lib/cloud-confessions/delays";
 import {
@@ -314,6 +316,16 @@ function parsePayload(job: CloudCoffeeEmailJob): Record<string, string> {
 }
 
 async function processOneJob(job: CloudCoffeeEmailJob): Promise<void> {
+  // Desde el inicio del evento (30 jul 07:00) no sale ningún correo más.
+  if (Date.now() >= new Date(EMAIL_SCHEDULE_HARD_CUTOFF_AT_ISO).getTime()) {
+    await completeCloudCoffeeEmailJob(job.id, { status: "cancelled" });
+    return;
+  }
+  if (isRunAtPastHardCutoff(job.runAt)) {
+    await completeCloudCoffeeEmailJob(job.id, { status: "cancelled" });
+    return;
+  }
+
   const email = normalizeEmail(job.email);
   const contact = await getCloudConfessionsContact(email);
   const status = contactStatus(contact);

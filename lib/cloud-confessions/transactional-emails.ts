@@ -349,3 +349,36 @@ export async function sendCloudCoffeeShareInviteEmail(input: {
 
   return send({ email: input.email, name, subject, preview, html });
 }
+
+/**
+ * Último aviso a invitados que aún no se registraron.
+ */
+export async function sendCloudCoffeeLastChanceEmail(input: {
+  email: string;
+  firstName: string;
+  lastName?: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const name = input.firstName.trim() || "hola";
+  const href = landingUrl(input.firstName, input.lastName ?? "", input.email);
+  const subject = "Aún estás a tiempo · Cloud & Coffee es mañana";
+  const preview =
+    "Café, desayuno y toda la energía para el Summit. Solicita tu cupo hoy.";
+
+  const html = wrapEmail({
+    preview,
+    title: subject,
+    bodyHtml: `
+      <p style="margin:0 0 18px;color:#9ab83a;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;text-align:center;">Última oportunidad</p>
+      <h1 style="margin:0 0 22px;font-size:32px;line-height:1.15;letter-spacing:-1px;color:#fff;text-align:center;">Aún estás a tiempo<br><span style="color:#9ab83a;">de registrarte</span></h1>
+      <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;text-align:center;">Hola ${escapeHtml(name)},</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Mañana es <strong style="color:#fff;">Cloud &amp; Coffee</strong> y todavía puedes solicitar tu cupo.</p>
+      <div style="margin:0 0 24px;border:1px solid #2a2b2d;border-radius:16px;background:#0f0f11;padding:18px;color:#fff;font-size:14px;line-height:1.8;text-align:center;">Jueves 30 de julio · 7:00 – 9:00 a. m.<br><span style="color:#a9a9ad;font-size:13px;">Antes del AWS Summit Bogotá</span></div>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Café, desayuno y conversación con gente de cloud. Luego llegas al Summit con toda la energía.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Si tú no vas, pero conoces a alguien que sí vaya al Summit, pásale este enlace para que pueda registrarse.</p>
+      <p style="margin:0 0 8px;color:#d8d8da;font-size:15px;line-height:1.7;text-align:center;">Si te interesa, solicita tu cupo hoy. Los lugares son limitados.</p>
+      <div style="text-align:center;">${ctaButton(href, "Solicitar mi cupo")}</div>
+    `,
+  });
+
+  return send({ email: input.email, name, subject, preview, html });
+}

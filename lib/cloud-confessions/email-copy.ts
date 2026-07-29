@@ -94,7 +94,7 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Hola {{ contact.NOMBRE }},",
       "Quizá se te pasó la invitación a Cloud & Coffee.",
       "Es un encuentro el jueves 30 de julio, cerca al Ágora: café, desayuno y gente de cloud, de 7:00 a. m. a 9:00 a. m. Tómate un café con C4c7Ops y llega con toda la energía al Summit.",
-      "Si te late, solicita tu cupo desde aquí.",
+      "Si te interesa, solicita tu cupo desde aquí.",
     ],
   },
   {
@@ -280,6 +280,31 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Copy tipo draft: otro dev + otra empresa + obsequio en el evento.",
       "El código ?ref= atribuye el referido en la columna referido_por de Registros.",
       "Sale con el cron de la cola de correos, 1 h después de aprobar.",
+    ],
+  },
+  {
+    id: "cc-last-chance",
+    name: "Último aviso · No registrados",
+    brevoListId: 11,
+    trigger: "Menú Sheets · envío inmediato a no registrados sin FU reciente",
+    timing: "One-off · 29 jul (víspera del evento)",
+    stopConditions: [
+      "Solo invitado / visitó / incompleto",
+      "Excluye quien recibió follow-up el 28 o 29 jul",
+      "Uno por contacto (job last_chance done)",
+    ],
+    subject: "Aún estás a tiempo · Cloud & Coffee es mañana",
+    previewText:
+      "Café, desayuno y toda la energía para el Summit. Solicita tu cupo hoy.",
+    ctaLabel: "Solicitar mi cupo",
+    ctaUrl: cloudConfessionsEmailConfig.personalizedLandingUrl,
+    body: [
+      "Hola {{ contact.NOMBRE }},",
+      "Mañana es Cloud & Coffee y todavía puedes solicitar tu cupo.",
+      "Jueves 30 de julio · 7:00 – 9:00 a. m. · Antes del AWS Summit Bogotá.",
+      "Café, desayuno y conversación con gente de cloud. Luego llegas al Summit con toda la energía.",
+      "Si tú no vas, pero conoces a alguien que sí vaya al Summit, pásale este enlace para que pueda registrarse.",
+      "Si te interesa, solicita tu cupo hoy. Los lugares son limitados.",
     ],
   },
 ];

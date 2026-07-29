@@ -39,6 +39,8 @@ const CONFIG = {
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-reset-test",
   SHARE_INVITE_WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-share-invite",
+  LAST_CHANCE_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-last-chance",
   ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
@@ -357,6 +359,8 @@ function onOpen() {
     .addItem("Reenviar Calendar (.ics)", "reenviarInvitacionCalendar")
     .addItem("Reprocesar aprobados sin QR", "reprocesarAprobadosSinQr")
     .addItem("Enviar correo obsequio a aprobados (ya)", "enviarCorreoObsequioAprobados")
+    .addItem("Último aviso a no registrados", "enviarUltimoAvisoNoRegistrados")
+    .addItem("Cancelar correos pendientes desde 30 jul 7am", "cancelarJobsPendientesPostEvento")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
     .addToUi();
@@ -1091,6 +1095,401 @@ function enviarCorreoObsequioAprobados() {
     msg += "\n\n" + errors.join("\n");
   }
   ui.alert(msg);
+}
+
+/**
+ * Último aviso a invitados que NO se registraron y que
+ * NO recibieron ni tienen programado follow-up el 28 ni el 29 de julio.
+ */
+function enviarUltimoAvisoNoRegistrados() {
+  const ui = SpreadsheetApp.getUi();
+  const openStatuses = {
+    invitado: true,
+    "visitó": true,
+    incompleto: true,
+  };
+
+  const invitees = listInviteesForLastChance_();
+  const recentFu = emailsWithRecentOrPendingFunnelFollowUp_();
+
+  const toSend = [];
+  let skippedRegistered = 0;
+  let skippedRecentFu = 0;
+  let skippedAlready = 0;
+
+  for (let i = 0; i < invitees.length; i += 1) {
+    const person = invitees[i];
+    if (!person.email) continue;
+    if (!openStatuses[person.status]) {
+      skippedRegistered += 1;
+      continue;
+    }
+    if (recentFu[normalizeEmail(person.email)]) {
+      skippedRecentFu += 1;
+      continue;
+    }
+    const existing = findLastChanceJob_(person.email);
+    if (existing && existing.status === "done") {
+      skippedAlready += 1;
+      continue;
+    }
+    toSend.push(person);
+  }
+
+  if (!toSend.length) {
+    ui.alert(
+      "Nada que enviar.\n" +
+        "Omitidos (FU recibido o pendiente 28/29): " +
+        skippedRecentFu +
+        "\nYa tenían last_chance done: " +
+        skippedAlready,
+    );
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Último aviso · no registrados",
+    "Se enviará a " +
+      toSend.length +
+      " persona(s) de a uno, con 1 minuto entre cada correo.\n\n" +
+      "Solo van quienes NO se registraron y NO tienen FU recibido ni pendiente el 28/29.\n\nOmitidos:\n· FU ayer/hoy (done o pending): " +
+      skippedRecentFu +
+      "\n· Ya enviado: " +
+      skippedAlready +
+      "\n\nAsunto: Aún estás a tiempo · Cloud & Coffee es mañana\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty(
+    "LAST_CHANCE_QUEUE",
+    JSON.stringify({
+      queue: toSend,
+      sent: 0,
+      failed: 0,
+      skippedRecentFu: skippedRecentFu,
+      skippedAlready: skippedAlready,
+      errors: [],
+    }),
+  );
+  cancelarUltimoAvisoTriggers_();
+
+  const first = sendNextLastChanceFromQueue_(false);
+  ui.alert(
+    "Empezó el envío (1 por minuto).\n" +
+      "Primer correo: " +
+      (first.ok ? "ok" : "falló") +
+      " · " +
+      first.email +
+      "\nRestantes en cola: " +
+      first.remaining +
+      "\n\nPuedes cerrar esta ventana; el script sigue solo.",
+  );
+}
+
+/** Activador: envía el siguiente de la cola y reprograma +1 min si quedan. */
+function continuarUltimoAvisoNoRegistrados() {
+  sendNextLastChanceFromQueue_(true);
+}
+
+function sendNextLastChanceFromQueue_(fromTrigger) {
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty("LAST_CHANCE_QUEUE");
+  if (!raw) {
+    cancelarUltimoAvisoTriggers_();
+    return { ok: false, email: "", remaining: 0 };
+  }
+
+  let state;
+  try {
+    state = JSON.parse(raw);
+  } catch (e) {
+    props.deleteProperty("LAST_CHANCE_QUEUE");
+    cancelarUltimoAvisoTriggers_();
+    return { ok: false, email: "", remaining: 0 };
+  }
+
+  const queue = Array.isArray(state.queue) ? state.queue : [];
+  if (!queue.length) {
+    props.deleteProperty("LAST_CHANCE_QUEUE");
+    cancelarUltimoAvisoTriggers_();
+    return { ok: false, email: "", remaining: 0 };
+  }
+
+  const item = queue.shift();
+  let ok = false;
+  let errMsg = "";
+
+  try {
+    const response = UrlFetchApp.fetch(CONFIG.LAST_CHANCE_WEBHOOK_URL, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: getWebhookSecret_(),
+        attendees: [
+          {
+            email: item.email,
+            firstName: item.firstName || "hola",
+            lastName: item.lastName || "",
+          },
+        ],
+      }),
+      muteHttpExceptions: true,
+    });
+
+    const statusCode = response.getResponseCode();
+    const bodyText = response.getContentText();
+    let body = {};
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      body = {};
+    }
+
+    const results = Array.isArray(body.results) ? body.results : [];
+    const result = results[0];
+    ok =
+      statusCode >= 200 &&
+      statusCode < 300 &&
+      body.success !== false &&
+      result &&
+      result.sent === true;
+    errMsg =
+      (result && result.error) || body.error || "HTTP " + statusCode;
+
+    const job = enqueueEmailJob({
+      email: item.email,
+      jobType: "last_chance",
+      runAt: new Date().toISOString(),
+      payload: JSON.stringify({
+        firstName: item.firstName || "hola",
+        lastName: item.lastName || "",
+      }),
+      once: true,
+    });
+    if (job && job.id) {
+      completeEmailJob({
+        id: job.id,
+        status: ok ? "done" : "failed",
+        error: ok ? "" : errMsg,
+      });
+    }
+
+    if (ok) {
+      state.sent = (state.sent || 0) + 1;
+      cancelEmailJobs(item.email, [
+        "followup_1",
+        "followup_2",
+        "visited",
+        "incomplete",
+      ]);
+    } else {
+      state.failed = (state.failed || 0) + 1;
+      if (!state.errors) state.errors = [];
+      if (state.errors.length < 12) {
+        state.errors.push(item.email + ": " + errMsg);
+      }
+    }
+  } catch (error) {
+    state.failed = (state.failed || 0) + 1;
+    errMsg = error && error.message ? error.message : "error";
+    if (!state.errors) state.errors = [];
+    if (state.errors.length < 12) {
+      state.errors.push(item.email + ": " + errMsg);
+    }
+  }
+
+  state.queue = queue;
+  props.setProperty("LAST_CHANCE_QUEUE", JSON.stringify(state));
+
+  if (queue.length) {
+    cancelarUltimoAvisoTriggers_();
+    ScriptApp.newTrigger("continuarUltimoAvisoNoRegistrados")
+      .timeBased()
+      .after(60 * 1000)
+      .create();
+  } else {
+    cancelarUltimoAvisoTriggers_();
+    props.deleteProperty("LAST_CHANCE_QUEUE");
+    if (fromTrigger) {
+      // Log final en ColaEmails no aplica; el resumen queda en el alert inicial + jobs.
+      console.log(
+        "Último aviso terminado. Enviados: " +
+          state.sent +
+          " · Fallidos: " +
+          state.failed,
+      );
+    }
+  }
+
+  return {
+    ok: ok,
+    email: item.email || "",
+    remaining: queue.length,
+  };
+}
+
+function cancelarUltimoAvisoTriggers_() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i += 1) {
+    if (triggers[i].getHandlerFunction() === "continuarUltimoAvisoNoRegistrados") {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+}
+
+/**
+ * Cancela todo pending en ColaEmails con run_at >= 30 jul 07:00 Bogotá
+ * (desde el inicio del evento no salen más correos).
+ */
+function cancelarJobsPendientesPostEvento() {
+  const ui = SpreadsheetApp.getUi();
+  const cutoff = new Date("2026-07-30T07:00:00-05:00").getTime();
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) {
+    ui.alert("ColaEmails vacía.");
+    return;
+  }
+
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+  let toCancel = 0;
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[JOB.STATUS - 1]) !== "pending") continue;
+    const runAt = new Date(row[JOB.RUN_AT - 1]).getTime();
+    if (!isFinite(runAt) || runAt < cutoff) continue;
+    toCancel += 1;
+  }
+
+  if (!toCancel) {
+    ui.alert("No hay jobs pending con run_at desde el 30 jul 07:00.");
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Cancelar desde 30 jul 07:00",
+    "Se cancelarán " +
+      toCancel +
+      " job(s) pending con run_at ≥ 30 jul 07:00 Bogotá.\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  let cancelled = 0;
+  const nowIso = new Date().toISOString();
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (String(row[JOB.STATUS - 1]) !== "pending") continue;
+    const runAt = new Date(row[JOB.RUN_AT - 1]).getTime();
+    if (!isFinite(runAt) || runAt < cutoff) continue;
+    const rowNumber = i + 2;
+    sheet.getRange(rowNumber, JOB.STATUS).setValue("cancelled");
+    sheet.getRange(rowNumber, JOB.PROCESSED_AT).setValue(nowIso);
+    sheet.getRange(rowNumber, JOB.ERROR).setValue("Cancelado: desde inicio del evento (30 jul 07:00)");
+    cancelled += 1;
+  }
+
+  ui.alert("Cancelados: " + cancelled);
+}
+
+function listInviteesForLastChance_() {
+  const sheet = getInvitesSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  const values = sheet
+    .getRange(2, 1, lastRow, Math.max(sheet.getLastColumn(), 8))
+    .getValues();
+  const out = [];
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    const email = normalizeEmail(row[INV.EMAIL - 1]);
+    if (!email) continue;
+    out.push({
+      email: email,
+      firstName: String(row[INV.FIRST_NAME - 1] || "").trim(),
+      lastName: String(row[INV.LAST_NAME - 1] || "").trim(),
+      status: normalizeInviteStatus_(row[INV.STATUS - 1]),
+    });
+  }
+  return out;
+}
+
+/** Correos con FU done el 28/29, o pending con run_at el 28/29 (Bogotá). */
+function emailsWithRecentOrPendingFunnelFollowUp_() {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  const map = {};
+  if (lastRow < 2) return map;
+
+  const funnelTypes = {
+    followup_1: true,
+    followup_2: true,
+    visited: true,
+    incomplete: true,
+  };
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    const type = String(row[JOB.TYPE - 1]);
+    if (!funnelTypes[type]) continue;
+
+    const status = String(row[JOB.STATUS - 1]);
+    let day = "";
+    if (status === "done") {
+      day = bogotaYmd_(row[JOB.PROCESSED_AT - 1] || row[JOB.RUN_AT - 1]);
+    } else if (status === "pending") {
+      day = bogotaYmd_(row[JOB.RUN_AT - 1]);
+    } else {
+      continue;
+    }
+
+    if (day !== "2026-07-28" && day !== "2026-07-29") continue;
+    const email = normalizeEmail(row[JOB.EMAIL - 1]);
+    if (email) map[email] = true;
+  }
+  return map;
+}
+
+/** @deprecated nombre viejo; usar emailsWithRecentOrPendingFunnelFollowUp_ */
+function emailsWithRecentFunnelFollowUp_() {
+  return emailsWithRecentOrPendingFunnelFollowUp_();
+}
+
+function bogotaYmd_(value) {
+  if (!value) return "";
+  const date = value instanceof Date ? value : new Date(value);
+  if (!isFinite(date.getTime())) return "";
+  return Utilities.formatDate(date, "America/Bogota", "yyyy-MM-dd");
+}
+
+function findLastChanceJob_(email) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const normalized = normalizeEmail(email);
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
+    if (String(row[JOB.TYPE - 1]) !== "last_chance") continue;
+    const status = String(row[JOB.STATUS - 1]);
+    if (status === "pending" || status === "done" || status === "failed") {
+      return { id: String(row[JOB.ID - 1]), status: status };
+    }
+  }
+  return null;
 }
 
 /** Compat: nombre viejo del menú por si quedó un activador cacheado. */

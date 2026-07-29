@@ -29,9 +29,23 @@ export const REMINDER_1_AT_ISO = "2026-07-28T09:00:00-05:00";
 /** Recordatorio 2 · 29 jul 2026 17:00 Bogotá */
 export const REMINDER_2_AT_ISO = "2026-07-29T17:00:00-05:00";
 
+/** Fin de Cloud & Coffee · 30 jul 2026 09:00 Bogotá */
+export const EVENT_END_AT_ISO = "2026-07-30T09:00:00-05:00";
+
+/**
+ * Tope duro: no programar ni enviar correos desde el inicio del evento
+ * (30 jul 2026 07:00 Bogotá).
+ */
+export const EMAIL_SCHEDULE_HARD_CUTOFF_AT_ISO = "2026-07-30T07:00:00-05:00";
+
 export function addMs(fromIso: string | Date, ms: number): string {
   const base = typeof fromIso === "string" ? new Date(fromIso) : fromIso;
   return new Date(base.getTime() + ms).toISOString();
+}
+
+export function isRunAtPastHardCutoff(runAt: string | Date): boolean {
+  const t = typeof runAt === "string" ? new Date(runAt).getTime() : runAt.getTime();
+  return t >= new Date(EMAIL_SCHEDULE_HARD_CUTOFF_AT_ISO).getTime();
 }
 
 export type CloudCoffeeEmailJobType =
@@ -41,4 +55,5 @@ export type CloudCoffeeEmailJobType =
   | "incomplete"
   | "reminder_1"
   | "reminder_2"
-  | "share_invite";
+  | "share_invite"
+  | "last_chance";
