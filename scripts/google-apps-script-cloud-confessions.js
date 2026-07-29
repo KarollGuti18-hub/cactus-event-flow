@@ -1151,7 +1151,13 @@ function enviarUltimoAvisoNoRegistrados() {
     "Último aviso · no registrados",
     "Se enviará a " +
       toSend.length +
-      " persona(s) de a uno, con 1 minuto entre cada correo.\n\n" +
+      " persona(s):\n· Lotes de " +
+      LAST_CHANCE_BATCH.SIZE +
+      "\n· " +
+      LAST_CHANCE_BATCH.GAP_SECONDS +
+      " s entre cada correo\n· " +
+      LAST_CHANCE_BATCH.DELAY_MINUTES +
+      " min entre lotes\n\n" +
       "Solo van quienes NO se registraron y NO tienen FU recibido ni pendiente el 28/29.\n\nOmitidos:\n· FU ayer/hoy (done o pending): " +
       skippedRecentFu +
       "\n· Ya enviado: " +
@@ -1168,6 +1174,7 @@ function enviarUltimoAvisoNoRegistrados() {
       queue: toSend,
       sent: 0,
       failed: 0,
+      inBatchCount: 0,
       skippedRecentFu: skippedRecentFu,
       skippedAlready: skippedAlready,
       errors: [],
@@ -1175,30 +1182,48 @@ function enviarUltimoAvisoNoRegistrados() {
   );
   cancelarUltimoAvisoTriggers_();
 
-  const first = sendNextLastChanceFromQueue_(false);
+  const first = sendNextLastChanceEmail_(false);
   ui.alert(
-    "Empezó el envío (1 por minuto).\n" +
+    "Empezó el envío.\n" +
       "Primer correo: " +
       (first.ok ? "ok" : "falló") +
       " · " +
       first.email +
-      "\nRestantes en cola: " +
+      "\nEn este lote: " +
+      first.inBatchCount +
+      "/" +
+      LAST_CHANCE_BATCH.SIZE +
+      "\nRestantes: " +
       first.remaining +
-      "\n\nPuedes cerrar esta ventana; el script sigue solo.",
+      "\n\nSigue solo: " +
+      LAST_CHANCE_BATCH.GAP_SECONDS +
+      " s entre correos, " +
+      LAST_CHANCE_BATCH.DELAY_MINUTES +
+      " min entre lotes.\nPuedes cerrar esta ventana.",
   );
 }
 
-/** Activador: envía el siguiente de la cola y reprograma +1 min si quedan. */
+/** Activador: envía el siguiente correo y reprograma 30 s o 10 min. */
 function continuarUltimoAvisoNoRegistrados() {
-  sendNextLastChanceFromQueue_(true);
+  sendNextLastChanceEmail_(true);
 }
 
-function sendNextLastChanceFromQueue_(fromTrigger) {
+/**
+ * Envía UN correo de la cola.
+ * Si el lote lleva < 20 → reprograma en 30 s.
+ * Si cerró un lote de 20 y quedan más → reprograma en 10 min.
+ */
+function sendNextLastChanceEmail_(fromTrigger) {
   const props = PropertiesService.getScriptProperties();
   const raw = props.getProperty("LAST_CHANCE_QUEUE");
   if (!raw) {
     cancelarUltimoAvisoTriggers_();
-    return { ok: false, email: "", remaining: 0 };
+    return {
+      ok: false,
+      email: "",
+      remaining: 0,
+      inBatchCount: 0,
+    };
   }
 
   let state;
@@ -1207,14 +1232,24 @@ function sendNextLastChanceFromQueue_(fromTrigger) {
   } catch (e) {
     props.deleteProperty("LAST_CHANCE_QUEUE");
     cancelarUltimoAvisoTriggers_();
-    return { ok: false, email: "", remaining: 0 };
+    return {
+      ok: false,
+      email: "",
+      remaining: 0,
+      inBatchCount: 0,
+    };
   }
 
   const queue = Array.isArray(state.queue) ? state.queue : [];
   if (!queue.length) {
     props.deleteProperty("LAST_CHANCE_QUEUE");
     cancelarUltimoAvisoTriggers_();
-    return { ok: false, email: "", remaining: 0 };
+    return {
+      ok: false,
+      email: "",
+      remaining: 0,
+      inBatchCount: state.inBatchCount || 0,
+    };
   }
 
   const item = queue.shift();
@@ -1300,20 +1335,14 @@ function sendNextLastChanceFromQueue_(fromTrigger) {
     }
   }
 
+  state.inBatchCount = (state.inBatchCount || 0) + 1;
   state.queue = queue;
   props.setProperty("LAST_CHANCE_QUEUE", JSON.stringify(state));
 
-  if (queue.length) {
-    cancelarUltimoAvisoTriggers_();
-    ScriptApp.newTrigger("continuarUltimoAvisoNoRegistrados")
-      .timeBased()
-      .after(60 * 1000)
-      .create();
-  } else {
+  if (!queue.length) {
     cancelarUltimoAvisoTriggers_();
     props.deleteProperty("LAST_CHANCE_QUEUE");
     if (fromTrigger) {
-      // Log final en ColaEmails no aplica; el resumen queda en el alert inicial + jobs.
       console.log(
         "Último aviso terminado. Enviados: " +
           state.sent +
@@ -1321,19 +1350,36 @@ function sendNextLastChanceFromQueue_(fromTrigger) {
           state.failed,
       );
     }
+  } else if (state.inBatchCount >= LAST_CHANCE_BATCH.SIZE) {
+    // Cerró el lote de 20 → pausa de 10 min y arranca el siguiente.
+    state.inBatchCount = 0;
+    props.setProperty("LAST_CHANCE_QUEUE", JSON.stringify(state));
+    cancelarUltimoAvisoTriggers_();
+    ScriptApp.newTrigger(LAST_CHANCE_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(LAST_CHANCE_BATCH.DELAY_MINUTES * 60 * 1000)
+      .create();
+  } else {
+    // Siguiente correo del mismo lote en 30 s.
+    cancelarUltimoAvisoTriggers_();
+    ScriptApp.newTrigger(LAST_CHANCE_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(LAST_CHANCE_BATCH.GAP_SECONDS * 1000)
+      .create();
   }
 
   return {
     ok: ok,
     email: item.email || "",
     remaining: queue.length,
+    inBatchCount: state.inBatchCount || 0,
   };
 }
 
 function cancelarUltimoAvisoTriggers_() {
   const triggers = ScriptApp.getProjectTriggers();
   for (let i = 0; i < triggers.length; i += 1) {
-    if (triggers[i].getHandlerFunction() === "continuarUltimoAvisoNoRegistrados") {
+    if (triggers[i].getHandlerFunction() === LAST_CHANCE_BATCH.TRIGGER_HANDLER) {
       ScriptApp.deleteTrigger(triggers[i]);
     }
   }
@@ -1642,6 +1688,16 @@ const INVITE_BATCH = {
   /** Minutos hasta el siguiente lote automático. */
   DELAY_MINUTES: 20,
   TRIGGER_HANDLER: "correrSiguienteLoteInvitados",
+};
+
+/** Lotes del último aviso a no registrados. */
+const LAST_CHANCE_BATCH = {
+  SIZE: 20,
+  /** Segundos entre un correo y el siguiente dentro del mismo lote. */
+  GAP_SECONDS: 30,
+  /** Minutos de pausa entre un lote de 20 y el siguiente. */
+  DELAY_MINUTES: 10,
+  TRIGGER_HANDLER: "continuarUltimoAvisoNoRegistrados",
 };
 
 /** Estados en los que ya no se reenvía la invitación automática. */
