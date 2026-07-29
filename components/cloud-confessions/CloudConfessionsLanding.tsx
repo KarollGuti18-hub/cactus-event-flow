@@ -287,15 +287,7 @@ export default function CloudConfessionsLanding() {
 
       <header className="fixed inset-x-0 top-0 z-50 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-5 sm:gap-6 sm:px-8">
-          <a href="#inicio" aria-label="Ir al inicio" className="flex min-w-0 shrink items-center gap-3">
-            <Image
-              src="/c4c7ops-isotype.png"
-              alt=""
-              width={56}
-              height={56}
-              priority
-              className="h-11 w-11 shrink-0 object-contain sm:h-12 sm:w-12"
-            />
+          <a href="#inicio" aria-label="Ir al inicio" className="flex min-w-0 shrink items-center">
             <Image
               src="/logo-c4c7ops-white.png"
               alt="C4C7OPS"
