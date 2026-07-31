@@ -336,13 +336,13 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Uno por contacto (job missed_event done)",
     ],
     subject: "Te extrañamos en Cloud & Coffee",
-    previewText: "Suscríbete y te avisamos de la próxima. Sin spam.",
-    ctaLabel: "Suscribirme a próximas invitaciones",
+    previewText: "Próximos eventos y novedades de C4c7Ops.",
+    ctaLabel: "Suscribirme",
     ctaUrl: "https://www.c4c7ops.co/newsletter",
     body: [
       "Hola {{ contact.NOMBRE }},",
-      "Tenías cupo confirmado, pero no te vimos el jueves.",
-      "Si quieres enterarte de la próxima, suscríbete a la lista de C4c7Ops.",
+      "Cloud & Coffee es café, conversación y cloud — y vamos a seguir haciendo más.",
+      "Si quieres enterarte de nuestros próximos eventos y novedades de C4c7Ops, suscríbete.",
     ],
   },
 ];

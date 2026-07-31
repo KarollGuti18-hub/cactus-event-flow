@@ -2011,6 +2011,13 @@ function upsertFeedback(data) {
       ? String(sheet.getRange(rowNumber, FB.ID).getValue() || "")
       : Utilities.getUuid();
   const submittedAt = String(data.submittedAt || new Date().toISOString());
+  // Si solo llega la carita (comentario vacío), no borra un comentario previo.
+  let comment = String(data.comment || "").slice(0, 2000);
+  if (!comment && rowNumber > 0) {
+    comment = String(
+      sheet.getRange(rowNumber, FB.COMMENT).getValue() || "",
+    ).slice(0, 2000);
+  }
   const row = [
     id || Utilities.getUuid(),
     email,
@@ -2018,7 +2025,7 @@ function upsertFeedback(data) {
     String(data.lastName || ""),
     token,
     Number(data.rating) || "",
-    String(data.comment || "").slice(0, 2000),
+    comment,
     submittedAt,
     String(data.source || "page"),
   ];

@@ -424,7 +424,7 @@ export async function sendCloudCoffeeFeedbackEmail(input: {
       <table role="presentation" cellspacing="0" cellpadding="0" align="center" style="margin:0 auto 8px;">
         <tr>${facesHtml}</tr>
       </table>
-      <p style="margin:18px 0 0;color:#77777c;font-size:13px;line-height:1.6;text-align:center;">Toca una carita para contarnos. Opcional: deja un comentario en la siguiente pantalla.</p>
+      <p style="margin:18px 0 0;color:#77777c;font-size:13px;line-height:1.6;text-align:center;">Toca una carita para guardarla al instante. Si quieres, deja un comentario en la siguiente pantalla.</p>
     `,
   });
 
@@ -440,7 +440,7 @@ export async function sendCloudCoffeeMissedEventEmail(input: {
 }): Promise<{ sent: boolean; error?: string }> {
   const name = input.firstName.trim() || "hola";
   const subject = "Te extrañamos en Cloud & Coffee";
-  const preview = "Suscríbete y te avisamos de la próxima. Sin spam.";
+  const preview = "Próximos eventos y novedades de C4c7Ops.";
   const params = new URLSearchParams({
     email: input.email,
   });
@@ -455,10 +455,9 @@ export async function sendCloudCoffeeMissedEventEmail(input: {
     bodyHtml: `
       <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;letter-spacing:-0.8px;color:#fff;text-align:center;">Te extrañamos<br><span style="color:#9ab83a;">en Cloud &amp; Coffee</span></h1>
       <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;text-align:center;">Hola ${escapeHtml(name)},</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Tenías cupo confirmado, pero no te vimos el jueves. Sin drama: a veces el día no da.</p>
-      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Si quieres enterarte de la próxima (cafés, conversaciones y cloud), suscríbete a la lista de C4c7Ops.</p>
-      <div style="text-align:center;">${ctaButton(href, "Suscribirme a próximas invitaciones")}</div>
-      <p style="margin:18px 0 0;color:#77777c;font-size:13px;line-height:1.6;text-align:center;">Solo te escribimos cuando haya algo que valga la pena.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Cloud &amp; Coffee es café, conversación y cloud — y vamos a seguir haciendo más.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Si quieres enterarte de nuestros próximos eventos y novedades de C4c7Ops, suscríbete.</p>
+      <div style="text-align:center;">${ctaButton(href, "Suscribirme")}</div>
     `,
   });
 

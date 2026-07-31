@@ -13,6 +13,7 @@ interface FeedbackPayload {
   token?: string;
   rating?: number | string;
   comment?: string;
+  source?: string;
 }
 
 export async function POST(request: Request) {
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
     const rating = parseFeedbackRating(body.rating);
     const comment =
       typeof body.comment === "string" ? body.comment.trim().slice(0, 2000) : "";
+    const source =
+      typeof body.source === "string" && body.source.trim()
+        ? body.source.trim().slice(0, 40)
+        : "page";
 
     if (!token) {
       return NextResponse.json({ error: "Token requerido" }, { status: 400 });
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
       qrToken: token,
       rating,
       comment,
-      source: "page",
+      source,
     });
 
     return NextResponse.json({ success: true });
