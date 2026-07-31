@@ -9,7 +9,8 @@ type CloudConfessionsAppsScriptAction =
   | "findByEmail"
   | "findByToken"
   | "updateRow"
-  | "listNeedingProcessing";
+  | "listNeedingProcessing"
+  | "upsertFeedback";
 
 interface CloudConfessionsAppsScriptResponse {
   success?: boolean;
@@ -126,4 +127,25 @@ export async function listCloudConfessionsRowsNeedingProcessing(): Promise<
 > {
   const result = await callCloudConfessionsAppsScript("listNeedingProcessing");
   return result.attendees ?? [];
+}
+
+export async function upsertCloudConfessionsFeedback(input: {
+  email: string;
+  firstName: string;
+  lastName: string;
+  qrToken: string;
+  rating: number;
+  comment: string;
+  source: string;
+}): Promise<void> {
+  await callCloudConfessionsAppsScript("upsertFeedback", {
+    email: input.email.trim().toLowerCase(),
+    firstName: input.firstName.trim(),
+    lastName: input.lastName.trim(),
+    qrToken: input.qrToken.trim(),
+    rating: input.rating,
+    comment: input.comment,
+    source: input.source,
+    submittedAt: new Date().toISOString(),
+  });
 }

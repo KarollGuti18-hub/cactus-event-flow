@@ -382,3 +382,85 @@ export async function sendCloudCoffeeLastChanceEmail(input: {
 
   return send({ email: input.email, name, subject, preview, html });
 }
+
+/**
+ * Post-evento: gracias + caritas de feedback a quienes asistieron (asistio=si).
+ */
+export async function sendCloudCoffeeFeedbackEmail(input: {
+  email: string;
+  firstName: string;
+  qrToken: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const name = input.firstName.trim() || "hola";
+  const subject = "Gracias por venir a Cloud & Coffee";
+  const preview = "Cuéntanos cómo te fue · un toque basta.";
+  const base = `${getAppUrl()}/cloud-and-coffee/feedback/${encodeURIComponent(input.qrToken.trim())}`;
+
+  const faces = [
+    { rating: 5, emoji: "🤩" },
+    { rating: 4, emoji: "🙂" },
+    { rating: 3, emoji: "😐" },
+    { rating: 2, emoji: "😔" },
+    { rating: 1, emoji: "😡" },
+  ];
+
+  const facesHtml = faces
+    .map(
+      (face) =>
+        `<td align="center" style="padding:4px;">
+          <a href="${escapeHtml(`${base}?rating=${face.rating}`)}" style="display:inline-block;width:52px;height:52px;line-height:52px;border-radius:14px;background:#2a2b2d;text-decoration:none;font-size:28px;">${face.emoji}</a>
+        </td>`,
+    )
+    .join("");
+
+  const html = wrapEmail({
+    preview,
+    title: subject,
+    bodyHtml: `
+      <h1 style="margin:0 0 10px;font-size:30px;line-height:1.2;letter-spacing:-0.8px;color:#fff;text-align:center;">Gracias por acompañarnos</h1>
+      <p style="margin:0 0 22px;color:#a9a9ad;font-size:15px;line-height:1.6;text-align:center;">Cloud &amp; Coffee</p>
+      <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;text-align:center;">Hola ${escapeHtml(name)},</p>
+      <p style="margin:0 0 28px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">¿Cómo te fue en <strong style="color:#fff;">Cloud &amp; Coffee</strong>?</p>
+      <table role="presentation" cellspacing="0" cellpadding="0" align="center" style="margin:0 auto 8px;">
+        <tr>${facesHtml}</tr>
+      </table>
+      <p style="margin:18px 0 0;color:#77777c;font-size:13px;line-height:1.6;text-align:center;">Toca una carita para contarnos. Opcional: deja un comentario en la siguiente pantalla.</p>
+    `,
+  });
+
+  return send({ email: input.email, name, subject, preview, html });
+}
+
+/**
+ * Post-evento: a aprobados que no asistieron → invitación al newsletter.
+ */
+export async function sendCloudCoffeeMissedEventEmail(input: {
+  email: string;
+  firstName: string;
+}): Promise<{ sent: boolean; error?: string }> {
+  const name = input.firstName.trim() || "hola";
+  const subject = "Te extrañamos en Cloud & Coffee";
+  const preview = "Suscríbete y te avisamos de la próxima. Sin spam.";
+  const params = new URLSearchParams({
+    email: input.email,
+  });
+  if (name && name !== "hola") {
+    params.set("firstname", name);
+  }
+  const href = `${getAppUrl()}/newsletter?${params.toString()}`;
+
+  const html = wrapEmail({
+    preview,
+    title: subject,
+    bodyHtml: `
+      <h1 style="margin:0 0 22px;font-size:30px;line-height:1.2;letter-spacing:-0.8px;color:#fff;text-align:center;">Te extrañamos<br><span style="color:#9ab83a;">en Cloud &amp; Coffee</span></h1>
+      <p style="margin:0 0 18px;color:#d8d8da;font-size:17px;line-height:1.7;text-align:center;">Hola ${escapeHtml(name)},</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Tenías cupo confirmado, pero no te vimos el jueves. Sin drama: a veces el día no da.</p>
+      <p style="margin:0 0 18px;color:#a9a9ad;font-size:16px;line-height:1.7;text-align:center;">Si quieres enterarte de la próxima (cafés, conversaciones y cloud), suscríbete a la lista de C4c7Ops.</p>
+      <div style="text-align:center;">${ctaButton(href, "Suscribirme a próximas invitaciones")}</div>
+      <p style="margin:18px 0 0;color:#77777c;font-size:13px;line-height:1.6;text-align:center;">Solo te escribimos cuando haya algo que valga la pena.</p>
+    `,
+  });
+
+  return send({ email: input.email, name, subject, preview, html });
+}

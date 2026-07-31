@@ -56,4 +56,6 @@ export type CloudCoffeeEmailJobType =
   | "reminder_1"
   | "reminder_2"
   | "share_invite"
-  | "last_chance";
+  | "last_chance"
+  | "feedback_thanks"
+  | "missed_event";

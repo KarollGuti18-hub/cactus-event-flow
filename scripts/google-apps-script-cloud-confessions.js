@@ -30,6 +30,7 @@ const CONFIG = {
   SHEET_NAME: "Registros",
   INVITES_SHEET_NAME: "Invitados",
   JOBS_SHEET_NAME: "ColaEmails",
+  FEEDBACK_SHEET_NAME: "Feedback",
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
@@ -41,6 +42,10 @@ const CONFIG = {
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-share-invite",
   LAST_CHANCE_WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-last-chance",
+  FEEDBACK_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-feedback",
+  MISSED_WEBHOOK_URL:
+    "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-missed",
   ORGANIZER_EMAIL: "ext-s@c4c7us.com",
   EVENT_TITLE: "Cloud & Coffee",
   EVENT_LOCATION: "Antes, un café · Cl. 24d #40-34, Bogotá",
@@ -100,6 +105,17 @@ const CONFIG = {
     "created_at",
     "processed_at",
     "error",
+  ],
+  FEEDBACK_HEADERS: [
+    "id",
+    "email",
+    "nombre",
+    "apellido",
+    "qr_token",
+    "rating",
+    "comment",
+    "submitted_at",
+    "source",
   ],
 };
 
@@ -188,6 +204,11 @@ function doPost(e) {
       case "updateInviteeStatus":
         updateInviteeStatus(data.email, data.status);
         return jsonResponse({ success: true });
+      case "upsertFeedback":
+        return jsonResponse({
+          success: true,
+          feedback: upsertFeedback(data),
+        });
       default:
         return jsonResponse({ success: false, error: "Acción no válida" });
     }
@@ -360,6 +381,8 @@ function onOpen() {
     .addItem("Reprocesar aprobados sin QR", "reprocesarAprobadosSinQr")
     .addItem("Enviar correo obsequio a aprobados (ya)", "enviarCorreoObsequioAprobados")
     .addItem("Último aviso a no registrados", "enviarUltimoAvisoNoRegistrados")
+    .addItem("Enviar gracias + feedback a asistentes", "enviarFeedbackAsistentes")
+    .addItem("Enviar newsletter a no asistentes", "enviarMissedAsistentes")
     .addItem("Cancelar correos pendientes desde 30 jul 7am", "cancelarJobsPendientesPostEvento")
     .addItem("Reparar encabezados Registros", "repararEncabezadosRegistros")
     .addItem("Resetear contacto de prueba", "resetearContactoPrueba")
@@ -1098,8 +1121,8 @@ function enviarCorreoObsequioAprobados() {
 }
 
 /**
- * Último aviso a invitados que NO se registraron y que
- * NO recibieron ni tienen programado follow-up el 28 ni el 29 de julio.
+ * Último aviso a invitados que NO se registraron y a quienes
+ * NO se les envió nada el lun 27 / mar 28 / mié 29 de julio.
  */
 function enviarUltimoAvisoNoRegistrados() {
   const ui = SpreadsheetApp.getUi();
@@ -1110,11 +1133,11 @@ function enviarUltimoAvisoNoRegistrados() {
   };
 
   const invitees = listInviteesForLastChance_();
-  const recentFu = emailsWithRecentOrPendingFunnelFollowUp_();
+  const touched = emailsTouchedMonTueWed_();
 
   const toSend = [];
   let skippedRegistered = 0;
-  let skippedRecentFu = 0;
+  let skippedRecent = 0;
   let skippedAlready = 0;
 
   for (let i = 0; i < invitees.length; i += 1) {
@@ -1124,8 +1147,8 @@ function enviarUltimoAvisoNoRegistrados() {
       skippedRegistered += 1;
       continue;
     }
-    if (recentFu[normalizeEmail(person.email)]) {
-      skippedRecentFu += 1;
+    if (touched[normalizeEmail(person.email)]) {
+      skippedRecent += 1;
       continue;
     }
     const existing = findLastChanceJob_(person.email);
@@ -1139,8 +1162,8 @@ function enviarUltimoAvisoNoRegistrados() {
   if (!toSend.length) {
     ui.alert(
       "Nada que enviar.\n" +
-        "Omitidos (FU recibido o pendiente 28/29): " +
-        skippedRecentFu +
+        "Omitidos (algo enviado o pendiente lun–mié): " +
+        skippedRecent +
         "\nYa tenían last_chance done: " +
         skippedAlready,
     );
@@ -1158,8 +1181,8 @@ function enviarUltimoAvisoNoRegistrados() {
       " s entre cada correo\n· " +
       LAST_CHANCE_BATCH.DELAY_MINUTES +
       " min entre lotes\n\n" +
-      "Solo van quienes NO se registraron y NO tienen FU recibido ni pendiente el 28/29.\n\nOmitidos:\n· FU ayer/hoy (done o pending): " +
-      skippedRecentFu +
+      "Solo van quienes NO se registraron y NO recibieron nada el lun 27, mar 28 ni mié 29.\n\nOmitidos:\n· Con correo lun–mié (done, pending o invitación): " +
+      skippedRecent +
       "\n· Ya enviado: " +
       skippedAlready +
       "\n\nAsunto: Aún estás a tiempo · Cloud & Coffee es mañana\n\n¿Continuar?",
@@ -1175,7 +1198,7 @@ function enviarUltimoAvisoNoRegistrados() {
       sent: 0,
       failed: 0,
       inBatchCount: 0,
-      skippedRecentFu: skippedRecentFu,
+      skippedRecentFu: skippedRecent,
       skippedAlready: skippedAlready,
       errors: [],
     }),
@@ -1386,6 +1409,635 @@ function cancelarUltimoAvisoTriggers_() {
 }
 
 /**
+ * Envía gracias + caritas de feedback a quienes tienen asistio = si.
+ * Mismo ritmo: 20 correos / 30 s / pausa 10 min.
+ */
+function enviarFeedbackAsistentes() {
+  const ui = SpreadsheetApp.getUi();
+  ensureFeedbackSheet_();
+
+  const attendees = getAllAttendees(getSheet()).filter(function (a) {
+    return (
+      a &&
+      a.email &&
+      a.qrToken &&
+      String(a.attended || "").trim().toLowerCase() === "si"
+    );
+  });
+
+  if (!attendees.length) {
+    ui.alert("No hay filas con asistio = si y qr_token.");
+    return;
+  }
+
+  const toSend = [];
+  let skippedAlready = 0;
+  for (let i = 0; i < attendees.length; i += 1) {
+    const a = attendees[i];
+    const existing = findFeedbackThanksJob_(a.email);
+    if (existing && existing.status === "done") {
+      skippedAlready += 1;
+      continue;
+    }
+    toSend.push({
+      email: a.email,
+      firstName: a.firstName || "hola",
+      qrToken: a.qrToken,
+    });
+  }
+
+  if (!toSend.length) {
+    ui.alert(
+      "Nada que enviar.\nTodos los asistentes ya tienen feedback_thanks done (" +
+        skippedAlready +
+        ").",
+    );
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Gracias + feedback",
+    "Se enviará a " +
+      toSend.length +
+      " asistente(s) (asistio=si):\n· Lotes de " +
+      FEEDBACK_BATCH.SIZE +
+      "\n· " +
+      FEEDBACK_BATCH.GAP_SECONDS +
+      " s entre correos\n· " +
+      FEEDBACK_BATCH.DELAY_MINUTES +
+      " min entre lotes\n\nOmitidos (ya enviado): " +
+      skippedAlready +
+      "\n\nAsunto: Gracias por venir a Cloud & Coffee\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty(
+    "FEEDBACK_QUEUE",
+    JSON.stringify({
+      queue: toSend,
+      sent: 0,
+      failed: 0,
+      inBatchCount: 0,
+      skippedAlready: skippedAlready,
+      errors: [],
+    }),
+  );
+  cancelarFeedbackTriggers_();
+
+  const first = sendNextFeedbackEmail_(false);
+  ui.alert(
+    "Empezó el envío de feedback.\n" +
+      "Primer correo: " +
+      (first.ok ? "ok" : "falló") +
+      " · " +
+      first.email +
+      "\nEn este lote: " +
+      first.inBatchCount +
+      "/" +
+      FEEDBACK_BATCH.SIZE +
+      "\nRestantes: " +
+      first.remaining +
+      "\n\nSigue solo. Puedes cerrar esta ventana.",
+  );
+}
+
+function continuarFeedbackAsistentes() {
+  sendNextFeedbackEmail_(true);
+}
+
+function sendNextFeedbackEmail_(fromTrigger) {
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty("FEEDBACK_QUEUE");
+  if (!raw) {
+    cancelarFeedbackTriggers_();
+    return { ok: false, email: "", remaining: 0, inBatchCount: 0 };
+  }
+
+  let state;
+  try {
+    state = JSON.parse(raw);
+  } catch (e) {
+    props.deleteProperty("FEEDBACK_QUEUE");
+    cancelarFeedbackTriggers_();
+    return { ok: false, email: "", remaining: 0, inBatchCount: 0 };
+  }
+
+  const queue = Array.isArray(state.queue) ? state.queue : [];
+  if (!queue.length) {
+    props.deleteProperty("FEEDBACK_QUEUE");
+    cancelarFeedbackTriggers_();
+    return {
+      ok: false,
+      email: "",
+      remaining: 0,
+      inBatchCount: state.inBatchCount || 0,
+    };
+  }
+
+  const item = queue.shift();
+  let ok = false;
+  let errMsg = "";
+
+  try {
+    const response = UrlFetchApp.fetch(CONFIG.FEEDBACK_WEBHOOK_URL, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: getWebhookSecret_(),
+        attendees: [
+          {
+            email: item.email,
+            firstName: item.firstName || "hola",
+            qrToken: item.qrToken,
+          },
+        ],
+      }),
+      muteHttpExceptions: true,
+    });
+
+    const statusCode = response.getResponseCode();
+    const bodyText = response.getContentText();
+    let body = {};
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      body = {};
+    }
+
+    const results = Array.isArray(body.results) ? body.results : [];
+    const result = results[0];
+    ok =
+      statusCode >= 200 &&
+      statusCode < 300 &&
+      body.success !== false &&
+      result &&
+      result.sent === true;
+    errMsg =
+      (result && result.error) || body.error || "HTTP " + statusCode;
+
+    const job = enqueueEmailJob({
+      email: item.email,
+      jobType: "feedback_thanks",
+      runAt: new Date().toISOString(),
+      payload: JSON.stringify({
+        firstName: item.firstName || "hola",
+        qrToken: item.qrToken,
+      }),
+      once: true,
+    });
+    if (job && job.id) {
+      completeEmailJob({
+        id: job.id,
+        status: ok ? "done" : "failed",
+        error: ok ? "" : errMsg,
+      });
+    }
+
+    if (ok) {
+      state.sent = (state.sent || 0) + 1;
+    } else {
+      state.failed = (state.failed || 0) + 1;
+      if (!state.errors) state.errors = [];
+      if (state.errors.length < 12) {
+        state.errors.push(item.email + ": " + errMsg);
+      }
+    }
+  } catch (error) {
+    state.failed = (state.failed || 0) + 1;
+    errMsg = error && error.message ? error.message : "error";
+    if (!state.errors) state.errors = [];
+    if (state.errors.length < 12) {
+      state.errors.push(item.email + ": " + errMsg);
+    }
+  }
+
+  state.inBatchCount = (state.inBatchCount || 0) + 1;
+  state.queue = queue;
+  props.setProperty("FEEDBACK_QUEUE", JSON.stringify(state));
+
+  if (!queue.length) {
+    cancelarFeedbackTriggers_();
+    props.deleteProperty("FEEDBACK_QUEUE");
+    if (fromTrigger) {
+      console.log(
+        "Feedback terminado. Enviados: " +
+          state.sent +
+          " · Fallidos: " +
+          state.failed,
+      );
+    }
+  } else if (state.inBatchCount >= FEEDBACK_BATCH.SIZE) {
+    state.inBatchCount = 0;
+    props.setProperty("FEEDBACK_QUEUE", JSON.stringify(state));
+    cancelarFeedbackTriggers_();
+    ScriptApp.newTrigger(FEEDBACK_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(FEEDBACK_BATCH.DELAY_MINUTES * 60 * 1000)
+      .create();
+  } else {
+    cancelarFeedbackTriggers_();
+    ScriptApp.newTrigger(FEEDBACK_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(FEEDBACK_BATCH.GAP_SECONDS * 1000)
+      .create();
+  }
+
+  return {
+    ok: ok,
+    email: item.email || "",
+    remaining: queue.length,
+    inBatchCount: state.inBatchCount || 0,
+  };
+}
+
+function cancelarFeedbackTriggers_() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i += 1) {
+    if (triggers[i].getHandlerFunction() === FEEDBACK_BATCH.TRIGGER_HANDLER) {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+}
+
+function findFeedbackThanksJob_(email) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const normalized = normalizeEmail(email);
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
+    if (String(row[JOB.TYPE - 1]) !== "feedback_thanks") continue;
+    const status = String(row[JOB.STATUS - 1]);
+    if (status === "pending" || status === "done" || status === "failed") {
+      return { id: String(row[JOB.ID - 1]), status: status };
+    }
+  }
+  return null;
+}
+
+/**
+ * Aprobados con asistio ≠ si → correo invitando al newsletter.
+ */
+function enviarMissedAsistentes() {
+  const ui = SpreadsheetApp.getUi();
+
+  const attendees = getAllAttendees(getSheet()).filter(function (a) {
+    if (!a || !a.email) return false;
+    if (a.status !== "aprobado") return false;
+    return String(a.attended || "").trim().toLowerCase() !== "si";
+  });
+
+  if (!attendees.length) {
+    ui.alert("No hay aprobados sin asistencia (asistio ≠ si).");
+    return;
+  }
+
+  const toSend = [];
+  let skippedAlready = 0;
+  for (let i = 0; i < attendees.length; i += 1) {
+    const a = attendees[i];
+    const existing = findMissedEventJob_(a.email);
+    if (existing && existing.status === "done") {
+      skippedAlready += 1;
+      continue;
+    }
+    toSend.push({
+      email: a.email,
+      firstName: a.firstName || "hola",
+    });
+  }
+
+  if (!toSend.length) {
+    ui.alert(
+      "Nada que enviar.\nTodos ya tienen missed_event done (" +
+        skippedAlready +
+        ").",
+    );
+    return;
+  }
+
+  const confirm = ui.alert(
+    "Newsletter · no asistentes",
+    "Se enviará a " +
+      toSend.length +
+      " aprobado(s) que no asistieron:\n· Lotes de " +
+      MISSED_BATCH.SIZE +
+      "\n· " +
+      MISSED_BATCH.GAP_SECONDS +
+      " s entre correos\n· " +
+      MISSED_BATCH.DELAY_MINUTES +
+      " min entre lotes\n\nOmitidos (ya enviado): " +
+      skippedAlready +
+      "\n\nAsunto: Te extrañamos en Cloud & Coffee\n\n¿Continuar?",
+    ui.ButtonSet.YES_NO,
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  const props = PropertiesService.getScriptProperties();
+  props.setProperty(
+    "MISSED_QUEUE",
+    JSON.stringify({
+      queue: toSend,
+      sent: 0,
+      failed: 0,
+      inBatchCount: 0,
+      skippedAlready: skippedAlready,
+      errors: [],
+    }),
+  );
+  cancelarMissedTriggers_();
+
+  const first = sendNextMissedEmail_(false);
+  ui.alert(
+    "Empezó el envío a no asistentes.\n" +
+      "Primer correo: " +
+      (first.ok ? "ok" : "falló") +
+      " · " +
+      first.email +
+      "\nRestantes: " +
+      first.remaining +
+      "\n\nSigue solo. Puedes cerrar esta ventana.",
+  );
+}
+
+function continuarMissedAsistentes() {
+  sendNextMissedEmail_(true);
+}
+
+function sendNextMissedEmail_(fromTrigger) {
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty("MISSED_QUEUE");
+  if (!raw) {
+    cancelarMissedTriggers_();
+    return { ok: false, email: "", remaining: 0, inBatchCount: 0 };
+  }
+
+  let state;
+  try {
+    state = JSON.parse(raw);
+  } catch (e) {
+    props.deleteProperty("MISSED_QUEUE");
+    cancelarMissedTriggers_();
+    return { ok: false, email: "", remaining: 0, inBatchCount: 0 };
+  }
+
+  const queue = Array.isArray(state.queue) ? state.queue : [];
+  if (!queue.length) {
+    props.deleteProperty("MISSED_QUEUE");
+    cancelarMissedTriggers_();
+    return {
+      ok: false,
+      email: "",
+      remaining: 0,
+      inBatchCount: state.inBatchCount || 0,
+    };
+  }
+
+  const item = queue.shift();
+  let ok = false;
+  let errMsg = "";
+
+  try {
+    const response = UrlFetchApp.fetch(CONFIG.MISSED_WEBHOOK_URL, {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: getWebhookSecret_(),
+        attendees: [
+          {
+            email: item.email,
+            firstName: item.firstName || "hola",
+          },
+        ],
+      }),
+      muteHttpExceptions: true,
+    });
+
+    const statusCode = response.getResponseCode();
+    const bodyText = response.getContentText();
+    let body = {};
+    try {
+      body = JSON.parse(bodyText);
+    } catch (e) {
+      body = {};
+    }
+
+    const results = Array.isArray(body.results) ? body.results : [];
+    const result = results[0];
+    ok =
+      statusCode >= 200 &&
+      statusCode < 300 &&
+      body.success !== false &&
+      result &&
+      result.sent === true;
+    errMsg =
+      (result && result.error) || body.error || "HTTP " + statusCode;
+
+    const job = enqueueEmailJob({
+      email: item.email,
+      jobType: "missed_event",
+      runAt: new Date().toISOString(),
+      payload: JSON.stringify({ firstName: item.firstName || "hola" }),
+      once: true,
+    });
+    if (job && job.id) {
+      completeEmailJob({
+        id: job.id,
+        status: ok ? "done" : "failed",
+        error: ok ? "" : errMsg,
+      });
+    }
+
+    if (ok) {
+      state.sent = (state.sent || 0) + 1;
+    } else {
+      state.failed = (state.failed || 0) + 1;
+      if (!state.errors) state.errors = [];
+      if (state.errors.length < 12) {
+        state.errors.push(item.email + ": " + errMsg);
+      }
+    }
+  } catch (error) {
+    state.failed = (state.failed || 0) + 1;
+    errMsg = error && error.message ? error.message : "error";
+    if (!state.errors) state.errors = [];
+    if (state.errors.length < 12) {
+      state.errors.push(item.email + ": " + errMsg);
+    }
+  }
+
+  state.inBatchCount = (state.inBatchCount || 0) + 1;
+  state.queue = queue;
+  props.setProperty("MISSED_QUEUE", JSON.stringify(state));
+
+  if (!queue.length) {
+    cancelarMissedTriggers_();
+    props.deleteProperty("MISSED_QUEUE");
+    if (fromTrigger) {
+      console.log(
+        "Missed terminado. Enviados: " +
+          state.sent +
+          " · Fallidos: " +
+          state.failed,
+      );
+    }
+  } else if (state.inBatchCount >= MISSED_BATCH.SIZE) {
+    state.inBatchCount = 0;
+    props.setProperty("MISSED_QUEUE", JSON.stringify(state));
+    cancelarMissedTriggers_();
+    ScriptApp.newTrigger(MISSED_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(MISSED_BATCH.DELAY_MINUTES * 60 * 1000)
+      .create();
+  } else {
+    cancelarMissedTriggers_();
+    ScriptApp.newTrigger(MISSED_BATCH.TRIGGER_HANDLER)
+      .timeBased()
+      .after(MISSED_BATCH.GAP_SECONDS * 1000)
+      .create();
+  }
+
+  return {
+    ok: ok,
+    email: item.email || "",
+    remaining: queue.length,
+    inBatchCount: state.inBatchCount || 0,
+  };
+}
+
+function cancelarMissedTriggers_() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i += 1) {
+    if (triggers[i].getHandlerFunction() === MISSED_BATCH.TRIGGER_HANDLER) {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+}
+
+function findMissedEventJob_(email) {
+  const sheet = getJobsSheet();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+
+  const normalized = normalizeEmail(email);
+  const values = sheet
+    .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
+    .getValues();
+
+  for (let i = 0; i < values.length; i += 1) {
+    const row = values[i];
+    if (normalizeEmail(row[JOB.EMAIL - 1]) !== normalized) continue;
+    if (String(row[JOB.TYPE - 1]) !== "missed_event") continue;
+    const status = String(row[JOB.STATUS - 1]);
+    if (status === "pending" || status === "done" || status === "failed") {
+      return { id: String(row[JOB.ID - 1]), status: status };
+    }
+  }
+  return null;
+}
+
+const FB = {
+  ID: 1,
+  EMAIL: 2,
+  FIRST_NAME: 3,
+  LAST_NAME: 4,
+  QR_TOKEN: 5,
+  RATING: 6,
+  COMMENT: 7,
+  SUBMITTED_AT: 8,
+  SOURCE: 9,
+};
+
+function ensureFeedbackSheet_() {
+  return getFeedbackSheet();
+}
+
+function getFeedbackSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(CONFIG.FEEDBACK_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(CONFIG.FEEDBACK_SHEET_NAME);
+  }
+  const headers = sheet
+    .getRange(1, 1, 1, CONFIG.FEEDBACK_HEADERS.length)
+    .getValues()[0];
+  const needsHeaders = CONFIG.FEEDBACK_HEADERS.some(function (h, i) {
+    return String(headers[i] || "").trim() !== h;
+  });
+  if (needsHeaders) {
+    sheet
+      .getRange(1, 1, 1, CONFIG.FEEDBACK_HEADERS.length)
+      .setValues([CONFIG.FEEDBACK_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/** Upsert por qr_token (si ya respondió, actualiza rating/comentario). */
+function upsertFeedback(data) {
+  const sheet = getFeedbackSheet();
+  const token = String(data.qrToken || "").trim();
+  const email = normalizeEmail(data.email);
+  if (!token && !email) {
+    throw new Error("Feedback sin token ni email");
+  }
+
+  const lastRow = sheet.getLastRow();
+  let rowNumber = 0;
+  if (lastRow >= 2) {
+    const values = sheet
+      .getRange(2, 1, lastRow, CONFIG.FEEDBACK_HEADERS.length)
+      .getValues();
+    for (let i = 0; i < values.length; i += 1) {
+      const rowToken = String(values[i][FB.QR_TOKEN - 1] || "").trim();
+      const rowEmail = normalizeEmail(values[i][FB.EMAIL - 1]);
+      if ((token && rowToken === token) || (email && rowEmail === email)) {
+        rowNumber = i + 2;
+        break;
+      }
+    }
+  }
+
+  const id =
+    rowNumber > 0
+      ? String(sheet.getRange(rowNumber, FB.ID).getValue() || "")
+      : Utilities.getUuid();
+  const submittedAt = String(data.submittedAt || new Date().toISOString());
+  const row = [
+    id || Utilities.getUuid(),
+    email,
+    String(data.firstName || ""),
+    String(data.lastName || ""),
+    token,
+    Number(data.rating) || "",
+    String(data.comment || "").slice(0, 2000),
+    submittedAt,
+    String(data.source || "page"),
+  ];
+
+  if (rowNumber > 0) {
+    sheet.getRange(rowNumber, 1, rowNumber, CONFIG.FEEDBACK_HEADERS.length).setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+
+  return {
+    id: row[0],
+    email: email,
+    rating: row[5],
+    submittedAt: submittedAt,
+  };
+}
+
+/**
  * Cancela todo pending en ColaEmails con run_at >= 30 jul 07:00 Bogotá
  * (desde el inicio del evento no salen más correos).
  */
@@ -1460,16 +2112,35 @@ function listInviteesForLastChance_() {
       firstName: String(row[INV.FIRST_NAME - 1] || "").trim(),
       lastName: String(row[INV.LAST_NAME - 1] || "").trim(),
       status: normalizeInviteStatus_(row[INV.STATUS - 1]),
+      invitedAt: row[INV.INVITED_AT - 1],
     });
   }
   return out;
 }
 
-/** Correos con FU done el 28/29, o pending con run_at el 28/29 (Bogotá). */
-function emailsWithRecentOrPendingFunnelFollowUp_() {
+/**
+ * Quienes recibieron o tienen pendiente algo el lun 27 / mar 28 / mié 29:
+ * - invitación (Invitado el) esos días
+ * - cualquier job de funnel done/pending esos días
+ */
+function emailsTouchedMonTueWed_() {
+  const quietDays = {
+    "2026-07-27": true,
+    "2026-07-28": true,
+    "2026-07-29": true,
+  };
+  const map = {};
+
+  const invitees = listInviteesForLastChance_();
+  for (let i = 0; i < invitees.length; i += 1) {
+    const day = bogotaYmd_(invitees[i].invitedAt);
+    if (quietDays[day]) {
+      map[normalizeEmail(invitees[i].email)] = true;
+    }
+  }
+
   const sheet = getJobsSheet();
   const lastRow = sheet.getLastRow();
-  const map = {};
   if (lastRow < 2) return map;
 
   const funnelTypes = {
@@ -1477,6 +2148,7 @@ function emailsWithRecentOrPendingFunnelFollowUp_() {
     followup_2: true,
     visited: true,
     incomplete: true,
+    last_chance: true,
   };
   const values = sheet
     .getRange(2, 1, lastRow, CONFIG.JOB_HEADERS.length)
@@ -1497,16 +2169,21 @@ function emailsWithRecentOrPendingFunnelFollowUp_() {
       continue;
     }
 
-    if (day !== "2026-07-28" && day !== "2026-07-29") continue;
+    if (!quietDays[day]) continue;
     const email = normalizeEmail(row[JOB.EMAIL - 1]);
     if (email) map[email] = true;
   }
   return map;
 }
 
-/** @deprecated nombre viejo; usar emailsWithRecentOrPendingFunnelFollowUp_ */
+/** Compat: mismos días lun–mié. */
+function emailsWithRecentOrPendingFunnelFollowUp_() {
+  return emailsTouchedMonTueWed_();
+}
+
+/** @deprecated */
 function emailsWithRecentFunnelFollowUp_() {
-  return emailsWithRecentOrPendingFunnelFollowUp_();
+  return emailsTouchedMonTueWed_();
 }
 
 function bogotaYmd_(value) {
@@ -1700,6 +2377,22 @@ const LAST_CHANCE_BATCH = {
   TRIGGER_HANDLER: "continuarUltimoAvisoNoRegistrados",
 };
 
+/** Lotes del correo de gracias + feedback a asistentes. */
+const FEEDBACK_BATCH = {
+  SIZE: 20,
+  GAP_SECONDS: 30,
+  DELAY_MINUTES: 10,
+  TRIGGER_HANDLER: "continuarFeedbackAsistentes",
+};
+
+/** Lotes del correo a no asistentes → newsletter. */
+const MISSED_BATCH = {
+  SIZE: 20,
+  GAP_SECONDS: 30,
+  DELAY_MINUTES: 10,
+  TRIGGER_HANDLER: "continuarMissedAsistentes",
+};
+
 /** Estados en los que ya no se reenvía la invitación automática. */
 const INVITE_DONE_STATUSES = {
   invitado: true,
@@ -1749,9 +2442,10 @@ function normalizeInviteStatus_(value) {
 function ensureInvitesAndJobsSheets() {
   const invites = getInvitesSheet();
   getJobsSheet();
+  getFeedbackSheet();
   formatInvitesSheet_(invites);
   SpreadsheetApp.getUi().alert(
-    "Hojas listas: Invitados y ColaEmails.\n\n1. Pega Nombre | Apellido | Correo (Estado queda pendiente).\n2. Marca la casilla verde en I1 (▶ Correr) o menú → ▶ Correr invitaciones.\nSi falla: sale un popup y el detalle en columna Error (J).\n3. Solo entonces se envían los correos.",
+    "Hojas listas: Invitados, ColaEmails y Feedback.\n\n1. Pega Nombre | Apellido | Correo (Estado queda pendiente).\n2. Marca la casilla verde en I1 (▶ Correr) o menú → ▶ Correr invitaciones.\nSi falla: sale un popup y el detalle en columna Error (J).\n3. Solo entonces se envían los correos.",
   );
 }
 

@@ -307,4 +307,42 @@ export const cloudConfessionsEmails: CloudConfessionsEmailTemplate[] = [
       "Si te interesa, solicita tu cupo hoy. Los lugares son limitados.",
     ],
   },
+  {
+    id: "cc-feedback",
+    name: "Gracias + feedback (asistentes)",
+    brevoListId: 15,
+    trigger: "Menú Sheets · asistio = si",
+    timing: "One-off post-evento",
+    stopConditions: [
+      "Solo filas con asistio=si y qr_token",
+      "Uno por contacto (job feedback_thanks done)",
+    ],
+    subject: "Gracias por venir a Cloud & Coffee",
+    previewText: "Cuéntanos cómo te fue · un toque basta.",
+    body: [
+      "Hola {{ contact.NOMBRE }},",
+      "Gracias por acompañarnos en Cloud & Coffee.",
+      "¿Cómo te fue? Elige una carita (te lleva a una pantalla para comentar si quieres).",
+    ],
+  },
+  {
+    id: "cc-missed-event",
+    name: "No asistió → newsletter",
+    brevoListId: 15,
+    trigger: "Menú Sheets · aprobado y asistio ≠ si",
+    timing: "One-off post-evento",
+    stopConditions: [
+      "Solo aprobados sin asistencia",
+      "Uno por contacto (job missed_event done)",
+    ],
+    subject: "Te extrañamos en Cloud & Coffee",
+    previewText: "Suscríbete y te avisamos de la próxima. Sin spam.",
+    ctaLabel: "Suscribirme a próximas invitaciones",
+    ctaUrl: "https://www.c4c7ops.co/newsletter",
+    body: [
+      "Hola {{ contact.NOMBRE }},",
+      "Tenías cupo confirmado, pero no te vimos el jueves.",
+      "Si quieres enterarte de la próxima, suscríbete a la lista de C4c7Ops.",
+    ],
+  },
 ];
