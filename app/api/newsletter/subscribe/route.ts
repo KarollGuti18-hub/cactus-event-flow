@@ -7,6 +7,10 @@ import {
   parseListId,
   sendToBrevo,
 } from "@/lib/brevo";
+import {
+  isCloudConfessionsGoogleSheetsConfigured,
+  upsertCloudConfessionsSubscription,
+} from "@/lib/cloud-confessions/google-sheets";
 
 interface SubscribePayload {
   email?: string;
@@ -16,13 +20,6 @@ interface SubscribePayload {
 
 export async function POST(request: Request) {
   try {
-    if (!getBrevoApiKey()) {
-      return NextResponse.json(
-        { error: "Brevo no configurado" },
-        { status: 500 },
-      );
-    }
-
     const body = (await request.json()) as SubscribePayload;
     const email =
       typeof body.email === "string" ? normalizeEmail(body.email) : "";
@@ -37,30 +34,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Correo inválido" }, { status: 400 });
     }
 
-    const listId = parseListId(process.env.BREVO_NEWSLETTER_LIST_ID);
-    const attributes: Record<string, string | boolean> = {
-      NEWSLETTER_SOURCE: source,
-      NEWSLETTER_OPT_IN: true,
-    };
-    if (firstName) attributes.NOMBRE = firstName;
+    if (!isCloudConfessionsGoogleSheetsConfigured()) {
+      return NextResponse.json(
+        { error: "Google Sheets no configurado" },
+        { status: 500 },
+      );
+    }
 
-    const response = await sendToBrevo({
+    await upsertCloudConfessionsSubscription({
       email,
-      updateEnabled: true,
-      attributes,
-      ...(listId ? { listIds: [listId] } : {}),
+      firstName,
+      source,
     });
 
-    if (!response.ok && response.status !== 204) {
-      const err = await response.json().catch(() => ({}));
-      console.error("Newsletter subscribe failed", {
-        status: response.status,
-        err,
+    // Opcional: también a Brevo si hay lista configurada.
+    const listId = parseListId(process.env.BREVO_NEWSLETTER_LIST_ID);
+    if (getBrevoApiKey() && listId) {
+      const attributes: Record<string, string | boolean> = {
+        NEWSLETTER_SOURCE: source,
+        NEWSLETTER_OPT_IN: true,
+      };
+      if (firstName) attributes.NOMBRE = firstName;
+
+      const response = await sendToBrevo({
+        email,
+        updateEnabled: true,
+        attributes,
+        listIds: [listId],
       });
-      return NextResponse.json(
-        { error: "No pudimos suscribirte ahora" },
-        { status: 502 },
-      );
+
+      if (!response.ok && response.status !== 204) {
+        console.error("Newsletter Brevo sync failed", {
+          status: response.status,
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

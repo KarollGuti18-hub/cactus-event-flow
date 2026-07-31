@@ -31,6 +31,7 @@ const CONFIG = {
   INVITES_SHEET_NAME: "Invitados",
   JOBS_SHEET_NAME: "ColaEmails",
   FEEDBACK_SHEET_NAME: "Feedback",
+  SUBSCRIPTION_SHEET_NAME: "Suscripcion",
   SECRET: "reemplazar-con-secreto-seguro",
   WEBHOOK_URL:
     "https://www.c4c7ops.co/api/cloud-and-coffee/webhooks/sheets-approval",
@@ -116,6 +117,13 @@ const CONFIG = {
     "comment",
     "submitted_at",
     "source",
+  ],
+  SUBSCRIPTION_HEADERS: [
+    "id",
+    "email",
+    "nombre",
+    "source",
+    "subscribed_at",
   ],
 };
 
@@ -208,6 +216,11 @@ function doPost(e) {
         return jsonResponse({
           success: true,
           feedback: upsertFeedback(data),
+        });
+      case "upsertSubscription":
+        return jsonResponse({
+          success: true,
+          subscription: upsertSubscription(data),
         });
       default:
         return jsonResponse({ success: false, error: "Acción no válida" });
@@ -372,7 +385,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu("Cloud & Coffee")
     .addItem("1. Instalar activador", "instalarActivadorOnEdit")
-    .addItem("2. Crear hojas Invitados + Cola", "ensureInvitesAndJobsSheets")
+    .addItem("2. Crear hojas Invitados + Cola + Feedback + Suscripcion", "ensureInvitesAndJobsSheets")
     .addItem("3. Configurar secreto webhook", "configurarSecretoWebhook")
     .addItem("▶ Correr invitaciones (lotes de 20)", "correrInvitacionesDesdeMenu")
     .addItem("Cancelar lotes automáticos", "cancelarLotesInvitados")
@@ -2044,6 +2057,90 @@ function upsertFeedback(data) {
   };
 }
 
+const SUB = {
+  ID: 1,
+  EMAIL: 2,
+  FIRST_NAME: 3,
+  SOURCE: 4,
+  SUBSCRIBED_AT: 5,
+};
+
+function getSubscriptionSheet() {
+  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = spreadsheet.getSheetByName(CONFIG.SUBSCRIPTION_SHEET_NAME);
+  if (!sheet) {
+    sheet = spreadsheet.insertSheet(CONFIG.SUBSCRIPTION_SHEET_NAME);
+  }
+  const headers = sheet
+    .getRange(1, 1, 1, CONFIG.SUBSCRIPTION_HEADERS.length)
+    .getValues()[0];
+  const needsHeaders = CONFIG.SUBSCRIPTION_HEADERS.some(function (h, i) {
+    return String(headers[i] || "").trim() !== h;
+  });
+  if (needsHeaders) {
+    sheet
+      .getRange(1, 1, 1, CONFIG.SUBSCRIPTION_HEADERS.length)
+      .setValues([CONFIG.SUBSCRIPTION_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+
+/** Upsert por email en la pestaña Suscripcion. */
+function upsertSubscription(data) {
+  const sheet = getSubscriptionSheet();
+  const email = normalizeEmail(data.email);
+  if (!email) {
+    throw new Error("Suscripción sin email");
+  }
+
+  const lastRow = sheet.getLastRow();
+  let rowNumber = 0;
+  if (lastRow >= 2) {
+    const values = sheet
+      .getRange(2, 1, lastRow, CONFIG.SUBSCRIPTION_HEADERS.length)
+      .getValues();
+    for (let i = 0; i < values.length; i += 1) {
+      if (normalizeEmail(values[i][SUB.EMAIL - 1]) === email) {
+        rowNumber = i + 2;
+        break;
+      }
+    }
+  }
+
+  const id =
+    rowNumber > 0
+      ? String(sheet.getRange(rowNumber, SUB.ID).getValue() || "")
+      : Utilities.getUuid();
+  const subscribedAt = String(data.subscribedAt || new Date().toISOString());
+  const existingName =
+    rowNumber > 0
+      ? String(sheet.getRange(rowNumber, SUB.FIRST_NAME).getValue() || "")
+      : "";
+  const firstName = String(data.firstName || "").trim() || existingName;
+  const row = [
+    id || Utilities.getUuid(),
+    email,
+    firstName,
+    String(data.source || "newsletter").slice(0, 80),
+    subscribedAt,
+  ];
+
+  if (rowNumber > 0) {
+    sheet
+      .getRange(rowNumber, 1, rowNumber, CONFIG.SUBSCRIPTION_HEADERS.length)
+      .setValues([row]);
+  } else {
+    sheet.appendRow(row);
+  }
+
+  return {
+    id: row[0],
+    email: email,
+    subscribedAt: subscribedAt,
+  };
+}
+
 /**
  * Cancela todo pending en ColaEmails con run_at >= 30 jul 07:00 Bogotá
  * (desde el inicio del evento no salen más correos).
@@ -2450,9 +2547,10 @@ function ensureInvitesAndJobsSheets() {
   const invites = getInvitesSheet();
   getJobsSheet();
   getFeedbackSheet();
+  getSubscriptionSheet();
   formatInvitesSheet_(invites);
   SpreadsheetApp.getUi().alert(
-    "Hojas listas: Invitados, ColaEmails y Feedback.\n\n1. Pega Nombre | Apellido | Correo (Estado queda pendiente).\n2. Marca la casilla verde en I1 (▶ Correr) o menú → ▶ Correr invitaciones.\nSi falla: sale un popup y el detalle en columna Error (J).\n3. Solo entonces se envían los correos.",
+    "Hojas listas: Invitados, ColaEmails, Feedback y Suscripcion.\n\n1. Pega Nombre | Apellido | Correo (Estado queda pendiente).\n2. Marca la casilla verde en I1 (▶ Correr) o menú → ▶ Correr invitaciones.\nSi falla: sale un popup y el detalle en columna Error (J).\n3. Solo entonces se envían los correos.",
   );
 }
 

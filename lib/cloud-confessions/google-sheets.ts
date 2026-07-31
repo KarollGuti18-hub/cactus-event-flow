@@ -10,7 +10,8 @@ type CloudConfessionsAppsScriptAction =
   | "findByToken"
   | "updateRow"
   | "listNeedingProcessing"
-  | "upsertFeedback";
+  | "upsertFeedback"
+  | "upsertSubscription";
 
 interface CloudConfessionsAppsScriptResponse {
   success?: boolean;
@@ -147,5 +148,18 @@ export async function upsertCloudConfessionsFeedback(input: {
     comment: input.comment,
     source: input.source,
     submittedAt: new Date().toISOString(),
+  });
+}
+
+export async function upsertCloudConfessionsSubscription(input: {
+  email: string;
+  firstName?: string;
+  source?: string;
+}): Promise<void> {
+  await callCloudConfessionsAppsScript("upsertSubscription", {
+    email: input.email.trim().toLowerCase(),
+    firstName: (input.firstName ?? "").trim(),
+    source: (input.source ?? "newsletter").trim(),
+    subscribedAt: new Date().toISOString(),
   });
 }
